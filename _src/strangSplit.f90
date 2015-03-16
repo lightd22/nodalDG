@@ -17,7 +17,8 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
     DOUBLE PRECISION, DIMENSION(1:nex,1:nyOut), INTENT(IN) :: uEdge0
     DOUBLE PRECISION, DIMENSION(1:nxOut,1:ney), INTENT(IN) :: vEdge0
     DOUBLE PRECISION, DIMENSION(0:nQuad), INTENT(IN) :: quadNodes,quadWeights
-    DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,0:nQuad), INTENT(IN) :: legendreVal,legendreDeriv,avgXferOp,avgXferOpLU
+    DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,0:nQuad), INTENT(IN) :: legendreVal,legendreDeriv
+    DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,0:maxPolyDegree),INTENT(IN) :: avgXferOp,avgXferOpLU
     INTEGER, DIMENSION(0:maxPolyDegree), INTENT(IN) :: IPIV
     LOGICAL, INTENT(IN) :: oddstep
     ! Outputs
