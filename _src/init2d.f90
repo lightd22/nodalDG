@@ -1,4 +1,4 @@
-SUBROUTINE init2d(q,u,v,uEdge,vEdge,cdfOut,xPlot,yPlot,quadNodes,dxel,dyel,&
+SUBROUTINE init2d(q,u,v,uEdge,vEdge,xPlot,yPlot,quadNodes,dxel,dyel,&
                   dxPlot,dyPlot,elemCenterX,elemCenterY)
   ! ==============================================================================
   ! Computes initial conditions for q,u,v fields
@@ -21,7 +21,6 @@ SUBROUTINE init2d(q,u,v,uEdge,vEdge,cdfOut,xPlot,yPlot,quadNodes,dxel,dyel,&
   DOUBLE PRECISION, DIMENSION(1:nex), INTENT(IN) :: elemCenterX
   DOUBLE PRECISION, DIMENSION(1:ney), INTENT(IN) :: elemCenterY
   ! Outputs
-  CHARACTER(len=40), INTENT(OUT) :: cdfOut
   DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut,1:meqn) :: q
   DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut) :: u,v
   DOUBLE PRECISION, DIMENSION(1:nex,1:nyOut), INTENT(OUT) :: uEdge
@@ -49,13 +48,6 @@ SUBROUTINE init2d(q,u,v,uEdge,vEdge,cdfOut,xPlot,yPlot,quadNodes,dxel,dyel,&
       DOUBLE PRECISION, DIMENSION(1:nx,1:ny,1:meqn) :: q
     END SUBROUTINE
   END INTERFACE
-
-  SELECT CASE(testID)
-    CASE(0)
-      cdfOut =  'spltMod2d_consistency'
-    CASE(5)
-      cdfOut =  'spltMod2d_def_cosinebell'
-  END SELECT !testID
 
   ! Compute ICs on plotting grid
   CALL qinit(xPlot,yPlot,nxOut,nyOut,q)

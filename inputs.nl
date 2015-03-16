@@ -1,7 +1,7 @@
 &inputs
     ! Spatial element parameters
     startRes = 12,      ! Which resolution is run first
-    nRuns = 5,          ! How many runs are done
+    nRuns = 3,          ! How many runs are done
     nScale = 2,         ! Ratio between number of elements in successive runs
     maxPolyDegree = 4,  ! Degree of reconstructing polynomial
 

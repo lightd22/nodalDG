@@ -17,6 +17,7 @@ SUBROUTINE qinit(xVals,yVals,nx,ny,q)
   ! Local variables
   INTEGER :: i,j
   DOUBLE PRECISION, DIMENSION(1:nx,1:ny) :: r
+  DOUBLE PRECISION :: x0,y0
 
   SELECT CASE(testID)
     CASE(0,1) ! Uniform field
@@ -29,5 +30,23 @@ SUBROUTINE qinit(xVals,yVals,nx,ny,q)
       WHERE(r .lt. 1D0)
           q(:,:,1) = 0.25D0*(1D0+DCOS(PI*r))**2
       END WHERE
+    CASE(7) ! Slotted cylinder in deformation flow
+        x0 = 0.25D0
+        y0 = 0.5D0
+        DO j=1,ny
+            r(:,j) = SQRT((xVals-x0)**2 + (yVals(j)-y0)**2)
+        ENDDO !j
+        q = 0D0
+        WHERE(r .lt. .15D0)
+            q(:,:,1) = 1D0
+        END WHERE
+
+        DO j=1,ny
+            DO i=1,nx
+                IF(ABS(xVals(i)-x0) .lt. 0.025D0 .AND. yVals(j) .gt.(y0-0.0625D0)) THEN
+                    q(i,j,1) = 0D0
+                ENDIF
+            ENDDO !i
+        ENDDO !j
   END SELECT !testID
 END SUBROUTINE qinit

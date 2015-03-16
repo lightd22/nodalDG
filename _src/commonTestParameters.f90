@@ -5,6 +5,8 @@ MODULE commonTestParameters
   ! ========================================================================
   IMPLICIT NONE
   INTEGER :: nex,ney,nQuad,nxOut,nyOut,meqn,testID,maxPolyDegree
+  INTEGER :: cdfID,idq, t_dimid
+  INTEGER :: inUnit
   DOUBLE PRECISION, DIMENSION(1:2) :: xDomain,yDomain
   DOUBLE PRECISION :: PI,tfinal
   LOGICAL :: transient,doposlimit

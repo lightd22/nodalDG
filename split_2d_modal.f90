@@ -17,7 +17,6 @@ PROGRAM EXECUTE
     INTEGER :: startRes,noutput,nRuns,nScale
     LOGICAL :: debug
     REAL(KIND=8) :: muMAX,cflCoeff
-    INTEGER, PARAMETER :: inUnit=20,outUnit=21
 
     INTERFACE
       SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
@@ -28,7 +27,7 @@ PROGRAM EXECUTE
 
     NAMELIST /inputs/ startRes,nRuns,nScale,maxPolyDegree,cflCoeff,noutput,meqn, &
                       testID,tfinal,TRANSIENT,DEBUG
-
+    inUnit=20
     OPEN(unit=inUnit,file="inputs.nl",action="read")
     READ(inUnit,NML=inputs)
 

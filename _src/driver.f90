@@ -21,8 +21,9 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
   CHARACTER(len=40) :: cdfOut
   INTEGER, DIMENSION(10) :: tmp_method
   INTEGER :: nmethod,nmethod_final,imethod,ierr,i,j,p
+  INTEGER :: nstep,nout
   REAL(KIND=4) :: t0,tf
-  DOUBLE PRECISION :: dxel,dyel,dxPlot,dyPlot
+  DOUBLE PRECISION :: dxel,dyel,dxPlot,dyPlot,tmp_umax,tmp_vmax,calculatedMu,dt,time
   DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: quadNodes,quadWeights,elemCenterX,elemCenterY,&
       xPlot,yPlot,DGx,DGy,FOO
   DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:,:) :: u0,v0,uEdge0,vEdge0,&
@@ -30,8 +31,12 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
   DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:,:,:) :: q,q0
   INTEGER, ALLOCATABLE, DIMENSION(:) :: IPIV
 
+  ! =================================================================================
+  ! Subroutine Interfaces
+  ! =================================================================================
+
   INTERFACE
-    SUBROUTINE init2d(q,u,v,uEdge,vEdge,cdfOut,xPlot,yPlot,quadNodes,dxel,dyel,&
+    SUBROUTINE init2d(q,u,v,uEdge,vEdge,xPlot,yPlot,quadNodes,dxel,dyel,&
                       dxPlot,dyPlot,elemCenterX,elemCenterY)
       ! ==============================================================================
       ! Computes initial conditions for q,u,v fields
@@ -54,13 +59,37 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
       DOUBLE PRECISION, DIMENSION(1:nex), INTENT(IN) :: elemCenterX
       DOUBLE PRECISION, DIMENSION(1:ney), INTENT(IN) :: elemCenterY
       ! Outputs
-      CHARACTER(len=40), INTENT(OUT) :: cdfOut
       DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut,1:meqn) :: q
       DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut) :: u,v
       DOUBLE PRECISION, DIMENSION(1:nex,1:nyOut), INTENT(OUT) :: uEdge
       DOUBLE PRECISION, DIMENSION(1:nxOut,1:ney), INTENT(OUT) :: vEdge
     END SUBROUTINE init2d
+
+    SUBROUTINE output2d(q,xOut,yOut,timeOut,muOut,cdfOut,ilvl,stat)
+      ! ============================================================================
+      ! output2d - Creates netCDF output files and writes out different output fields
+      ! INPUTS: q(nx,ny,meqn)
+      !         xOut(nx),yOut(ny)
+      !         timeOut,muOut
+      ! OUTPUTS: -None-
+      ! ============================================================================
+      USE commonTestParameters
+      USE netCDF
+      IMPLICIT NONE
+      ! Inputs
+      INTEGER, INTENT(IN) :: ilvl,stat
+      CHARACTER(len=40), INTENT(IN) :: cdfOut
+      DOUBLE PRECISION, INTENT(IN) :: muOut,timeOut
+      DOUBLE PRECISION, DIMENSION(1:nxOut), INTENT(IN) :: xOut
+      DOUBLE PRECISION, DIMENSION(1:nyOut), INTENT(IN) :: yOut
+      DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut,1:meqn), INTENT(IN) :: q
+      ! Outputs
+    END SUBROUTINE output2d
   END INTERFACE
+  ! =================================================================================
+  ! END SUBROUTINE INTERFACES
+  ! =================================================================================
+
   if(nRuns.lt.1) STOP 'nRuns should be at least 1 in DRIVER()'
   PI = DACOS(-1D0)
 
@@ -73,6 +102,17 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
   tmp_method = 0
   tmp_method(1) = 1 ! Split modal DG, no limiting
   tmp_method(1) = 2 ! Split modal DG, mass redistribution limiting for positivity
+
+  SELECT CASE(testID)
+    CASE(0)
+      cdfOut = 'spltMod2d_consistency'
+    CASE(1)
+      cdfOut = 'spltMod2d_uniform'
+    CASE(5)
+      cdfOut = 'spltMod2d_def_cosinebell'
+    CASE(7)
+      cdfOut = 'spltMod2d_def_cyl'
+  END SELECT !testID
 
   DO nmethod = 1,nmethod_final
     imethod = tmp_method(nmethod)
@@ -136,19 +176,44 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
       ! =====================================================================================================
       ! Initialize q, u, and v arrays.
       ! =====================================================================================================
-      CALL init2d(q0,u0,v0,uEdge0,vEdge0,cdfOut,xPlot,yPlot,quadNodes,dxel,dyel,&
+      CALL init2d(q0,u0,v0,uEdge0,vEdge0,xPlot,yPlot,quadNodes,dxel,dyel,&
                   dxPlot,dyPlot,elemCenterX,elemCenterY)
+      q = q0
 
-      write(*,*) 'xplot',maxval(xPlot),minval(xplot)
-      write(*,*) 'yplot',maxval(yPlot),minval(yplot)
-      write(*,*) 'xdom', xDomain,nxOut
-      write(*,*) 'ydom', yDomain,nyOut
+      ! =====================================================================================================
+      ! Set up time step size
+      ! =====================================================================================================
+      time = 0D0
+
+      tmp_umax = MAXVAL(u0)
+      tmp_vmax = MAXVAL(v0)
+
+      IF(noutput .eq. -1) THEN
+          nstep = CEILING( tfinal*MAX(tmp_umax/dxel,tmp_vmax/dyel)/maxcfl )
+          nout = nstep
+      ELSE
+          nstep = noutput*CEILING( tfinal*MAX(tmp_umax/dxel,tmp_vmax/dyel)/maxcfl/DBLE(noutput) )
+          nout = noutput
+      ENDIF
+
+      dt = tfinal/DBLE(nstep)
+      calculatedMu = MAX(tmp_umax/dxel,tmp_vmax/dyel)*dt
+      write(*,*) 'Mu used=',calculatedMu
+
+      IF(p==1) THEN ! Set up netCDF output file
+        cdfOut = TRIM(outdir)//TRIM(cdfOut)//'.nc'
+        CALL output2d(q,xPlot,yPlot,tfinal,calculatedMu,cdfOut,nout,-1)
+      ENDIF
+      CALL output2d(q,xPlot,yPlot,tfinal,calculatedMu,cdfOut,p,0)
 
       CALL cpu_time(tf)
 
       DEALLOCATE(elemCenterX,elemCenterY,xPlot,yPlot,DGx,DGy,avgXferOp,avgXferOpLU,IPIV,FOO,&
                 q,q0,u0,v0,uEdge0,vEdge0,STAT=ierr)
     ENDDO !p
+
+    ! Close output files
+    CALL output2d(q,xPlot,yPlot,tfinal,calculatedMu,cdfOut,nout,1)
 
     DEALLOCATE(quadNodes,quadWeights,legendreVal,legendreDeriv,STAT=ierr)
 
