@@ -20,10 +20,12 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
   ! Local variables
   CHARACTER(len=40) :: cdfOut
   INTEGER, DIMENSION(10) :: tmp_method
-  INTEGER :: nmethod,nmethod_final,imethod,ierr,i,j,p
+  INTEGER :: nmethod,nmethod_final,imethod,ierr,i,j,p,n,m
   INTEGER :: nstep,nout
   REAL(KIND=4) :: t0,tf
+  LOGICAL :: oddstep
   DOUBLE PRECISION :: dxel,dyel,dxPlot,dyPlot,tmp_umax,tmp_vmax,calculatedMu,dt,time
+  DOUBLE PRECISION, DIMENSION(1:meqn) :: tmp_qmax,tmp_qmin
   DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: quadNodes,quadWeights,elemCenterX,elemCenterY,&
       xPlot,yPlot,DGx,DGy,FOO
   DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:,:) :: u0,v0,uEdge0,vEdge0,&
@@ -85,6 +87,32 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
       DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut,1:meqn), INTENT(IN) :: q
       ! Outputs
     END SUBROUTINE output2d
+
+    SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
+                           legendreVal,legendreDeriv,avgXferOp,avgXferOpLU,IPIV,&
+                           dt,dxel,dyel,oddstep)
+    ! =====================================================================================================
+    ! strangSplitUpdate is responsible for selecting which slice of subcell volumes is sent to mDGsweep for update to time
+    ! level tn+1 following a Strang splitting.
+    ! For Strang splitting:
+    !   - Each slice is updated
+    !   - Odd steps: x-slices are updated first (horizontal advection) then y-slices are updated (vertical advection)
+    !   - Even steps: y-slices are updated first then x-slices are updated (vertical advection)
+    ! =====================================================================================================
+        USE commonTestParameters
+        IMPLICIT NONE
+        ! Inputs
+        REAL(KIND=8), INTENT(IN) :: dt,dxel,dyel,time
+        REAL(KIND=8), DIMENSION(1:nxOut,1:nyOut), INTENT(IN) :: u0,v0
+        REAL(KIND=8), DIMENSION(1:nex,1:nyOut), INTENT(IN) :: uEdge0
+        REAL(KIND=8), DIMENSION(1:nxOut,1:ney), INTENT(IN) :: vEdge0
+        REAL(KIND=8), DIMENSION(0:nQuad), INTENT(IN) :: quadNodes,quadWeights
+        REAL(KIND=8), DIMENSION(0:maxPolyDegree,0:nQuad), INTENT(IN) :: legendreVal,legendreDeriv,avgXferOp,avgXferOpLU
+        INTEGER, DIMENSION(0:maxPolyDegree), INTENT(IN) :: IPIV
+        LOGICAL, INTENT(IN) :: oddstep
+        ! Outputs
+        REAL(KIND=8), DIMENSION(1:nxOut,1:nyOut,1:meqn), INTENT(INOUT) :: q
+      END SUBROUTINE strangSplit
   END INTERFACE
   ! =================================================================================
   ! END SUBROUTINE INTERFACES
@@ -206,14 +234,46 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
       ENDIF
       CALL output2d(q,xPlot,yPlot,tfinal,calculatedMu,cdfOut,p,0)
 
+      ! =====================================================================================================
+      ! Time integration
+      ! =====================================================================================================
+      DO m=1,meqn
+        tmp_qmax(m) = MAXVAL(q(:,:,m))
+        tmp_qmin(m) = MINVAL(q(:,:,m))
+      ENDDO !m
+
+      oddstep = .TRUE.
+      DO n=1,nstep
+        ! Call update
+        CALL strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
+                               legendreVal,legendreDeriv,avgXferOp,avgXferOpLU,IPIV,&
+                               dt,dxel,dyel,oddstep)
+
+        time = time + dt
+        ! Check if this is output time
+        IF((MOD(n,nstep/nout).eq.0).OR.(n.eq.nstep)) THEN ! Write output variables
+          CALL output2d(q,xPlot,yPlot,tfinal,calculatedMu,cdfOut,p,2)
+        ENDIF
+        DO m=1,meqn
+          tmp_qmin(m) = MIN(tmp_qmin(m),MINVAL(q(:,:,m)))
+          tmp_qmax(m) = MAX(tmp_qmax(m),MAXVAL(q(:,:,m)))
+        ENDDO !m
+
+        oddstep = .NOT. oddstep
+      ENDDO !n
+
       CALL cpu_time(tf)
+      tf = tf - t0
+      write(*,*) 'tf=', tf
+
+      IF(p == nRuns) THEN
+        ! Close output files
+        CALL output2d(q,xPlot,yPlot,tfinal,calculatedMu,cdfOut,nout,1)
+      ENDIF
 
       DEALLOCATE(elemCenterX,elemCenterY,xPlot,yPlot,DGx,DGy,avgXferOp,avgXferOpLU,IPIV,FOO,&
                 q,q0,u0,v0,uEdge0,vEdge0,STAT=ierr)
     ENDDO !p
-
-    ! Close output files
-    CALL output2d(q,xPlot,yPlot,tfinal,calculatedMu,cdfOut,nout,1)
 
     DEALLOCATE(quadNodes,quadWeights,legendreVal,legendreDeriv,STAT=ierr)
 

@@ -11,7 +11,9 @@ SOURCES = $(SRCDIR)/tfcn.f90 \
 					$(SRCDIR)/driver.f90 \
 					$(SRCDIR)/qinit.f90 \
 					$(SRCDIR)/init2d.f90 \
-					$(SRCDIR)/output2d.f90
+					$(SRCDIR)/output2d.f90\
+					$(SRCDIR)/strangSplit.f90\
+					$(SRCDIR)/updateVelocities.f90\
 
 MODULES = $(SRCDIR)/mDGmod.f90 \
 					$(SRCDIR)/commonTestParameters.f90 \
