@@ -19,14 +19,14 @@ SUBROUTINE output2d(q,xOut,yOut,timeOut,muOut,cdfOut,ilvl,stat)
   ! Outputs
   ! Local variables
   INTEGER, PARAMETER :: NDIMS = 4
-  INTEGER :: idt, meqn_dimid, x_dimid, y_dimid, idx, idy, idmu, idmpd
+  INTEGER :: idt, meqn_dimid, x_dimid, y_dimid, t_dimid,idx, idy, idmu, idmpd,idq
   CHARACTER(len=8) :: nxname,xname,nyname,yname,qname,muname,meqnName
   INTEGER, DIMENSION(1:NDIMS) :: start, count,dimids(NDIMS)
   INTEGER :: i,ierr,m,j
   DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: tmp
   DOUBLE PRECISION, DIMENSION(1:nxOut) :: qSlice
 
-  SAVE start, count
+  SAVE start,count,idq,t_dimid,meqn_dimid
 
   IF(stat == -1) THEN
     ! Create netCDF file and time variables
@@ -34,9 +34,9 @@ SUBROUTINE output2d(q,xOut,yOut,timeOut,muOut,cdfOut,ilvl,stat)
 
     ierr = NF90_REDEF(cdfID)
     ierr = NF90_DEF_DIM(cdfID, "nt", ilvl+1, t_dimid)
-    ierr = NF90_DEF_DIM(cdfID,"meqn", meqn, meqn_dimid)
+    ierr = NF90_DEF_DIM(cdfID, "meqn", meqn, meqn_dimid)
     ierr = NF90_DEF_VAR(cdfID, "time", NF90_FLOAT, t_dimid,idt)
-    ierr = NF90_DEF_VAR(cdfID,"maxPolyDegree",NF90_INT,idmpd)
+    ierr = NF90_DEF_VAR(cdfID, "maxPoly",NF90_INT,idmpd)
 
     ierr = NF90_ENDDEF(cdfID)
 
@@ -79,7 +79,7 @@ SUBROUTINE output2d(q,xOut,yOut,timeOut,muOut,cdfOut,ilvl,stat)
     ierr = NF90_DEF_VAR(cdfid, TRIM(yname),NF90_FLOAT,y_dimid,idy)
     ierr = NF90_DEF_VAR(cdfid, TRIM(muname),NF90_FLOAT,idmu)
 
-    ierr = NF90_enddef(cdfid)
+    ierr = NF90_ENDDEF(cdfid)
 
     ! Write x and y values
     ierr = NF90_PUT_VAR(cdfid, idx, xOut)
