@@ -13,13 +13,15 @@
 
     ! Testing parmeters
     meqn = 1            ! Number of tracers being simulated
-    
-    testID = 5          ! 0 = Consistency test
+
+    testID = 1          ! 0 = Consistency test
                         ! 1 = Uniform diagonal advection
                         ! 2 = Solid body rotation of cylinder
                         ! 5 = LeVeque deformation of C^3 cosinebell
                         ! 6 = LeVeque deformation of C^5 cosinebell
                         ! 7 = LeVeque deformation of slotted cylinder
+
+    tfinal = 5D0        ! Final time of integration
 
     TRANSIENT = .TRUE.  ! Time-dependent flow
 

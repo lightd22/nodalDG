@@ -4,9 +4,9 @@ MODULE commonTestParameters
   ! Used to simplify passing of this information throughout modal subroutines and functions
   ! ========================================================================
   IMPLICIT NONE
-  INTEGER :: nex,nQuad,nxOut,meqn,testID,maxPolyDegree
-  DOUBLE PRECISION, DIMENSION(1:2) :: xDomain
-  DOUBLE PRECISION :: PI,tfinal,u0,K0,rho0
+  INTEGER :: nex,ney,nQuad,nxOut,nyOut,meqn,testID,maxPolyDegree
+  DOUBLE PRECISION, DIMENSION(1:2) :: xDomain,yDomain
+  DOUBLE PRECISION :: PI,tfinal
   LOGICAL :: transient,doposlimit
   CHARACTER(len=24) :: outdir
   SAVE

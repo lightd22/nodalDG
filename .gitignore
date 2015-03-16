@@ -3,3 +3,5 @@ test_2d_modal
 .DS_Store
 *.m~
 *.pdf
+*.o
+*.mod
