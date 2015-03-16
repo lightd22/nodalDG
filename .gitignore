@@ -5,3 +5,4 @@ test_2d_modal
 *.pdf
 *.o
 *.mod
+*.nc
