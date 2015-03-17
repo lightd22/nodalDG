@@ -161,7 +161,7 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
     CASE(0)
       cdfOut = 'spltMod2d_consistency'
     CASE(1)
-      cdfOut = 'spltMod2d_uniform'
+      cdfOut = 'spltMod2d_adv_sine'
     CASE(5)
       cdfOut = 'spltMod2d_def_cosinebell'
     CASE(7)

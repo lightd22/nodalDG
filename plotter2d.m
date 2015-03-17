@@ -21,11 +21,13 @@ tests = {'adv_sine', ... % 1, Uniform adv of sine^4
          };
 res = {'1','2','3','4'};
 
-which_test = tests(6);
-which_res = res(1);
+which_test = tests(1);
+which_res = res(2);
 
 ncfilename = strcat('spltMod2d_' ,which_test{1}, '.nc');
 %%
 nc = ['_pdModal/', ncfilename];
 methname = 'Modal PD';
 out = plot_2dadv(methname,which_test,nc,which_res);
+x = out.x; y = out.y
+contourf(

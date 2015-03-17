@@ -159,4 +159,11 @@ SUBROUTINE updateSoln1d(q,u,uEdge,dt,dxel,nelem,nx,quadWeights,avgOP,avgOP_LU,&
     ENDDO !j
   ENDDO !m
 
+  ! Reform original shaped arrays
+  DO m=1,meqn
+    DO j=1,nelem
+      q(1+(maxPolyDegree+1)*(j-1):(maxPolyDegree+1)*j,m) = qBAR(:,j,m)
+    END DO !j
+  ENDDO !m
+
 END SUBROUTINE updateSoln1d
