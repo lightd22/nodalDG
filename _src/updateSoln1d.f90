@@ -24,7 +24,7 @@ SUBROUTINE updateSoln1d(q,u,uEdge,dt,dxel,nelem,nx,quadWeights,avgOP,avgOP_LU,&
   DOUBLE PRECISION, DIMENSION(1:3,0:nQuad,1:nelem) :: uTilde
   DOUBLE PRECISION, DIMENSION(1:3,0:nelem+1) :: uEdgeTilde
   DOUBLE PRECISION, DIMENSION(0:nQuad,1:nelem) :: uQuadTmp
-  DOUBLE PRECISION, DIMENSION(0:nQuad,1:nelem,1:meqn) :: quadVals,fluxValsQuad
+  DOUBLE PRECISION, DIMENSION(0:nQuad,1:nelem,1:meqn) :: quadVals,fluxQuad
   DOUBLE PRECISION, DIMENSION(0:nelem+1) :: uEdgeTmp
   DOUBLE PRECISION, DIMENSION(0:nelem,1:meqn) :: fluxes
   DOUBLE PRECISION, DIMENSION(0:nQuad,1:meqn) :: localSolnQuad
@@ -88,6 +88,34 @@ SUBROUTINE updateSoln1d(q,u,uEdge,dt,dxel,nelem,nx,quadWeights,avgOP,avgOP_LU,&
       ! Outputs
       DOUBLE PRECISION, DIMENSION(0:nelem,1:meqn), INTENT(OUT) :: fluxes
     END SUBROUTINE numFlux
+
+    SUBROUTINE forwardStep(coeffs,fluxQuad,flx,quadWeights,dLegVals,dxel,dt,nelem)
+      ! ================================================================================
+      ! Takes single forward Euler step applied to coefficient odes
+      ! d a_kj / dt = forcingCoeffODE()
+      ! Inputs:
+      !         fluxQuad - flux function F(q) evaluated at quadrature nodes
+      !         flx - numerical fluxes through interface
+      !         quadWeghts - Gauss quadrature weights
+      !         dLegVals - derivative of Legendre basis at quadrature nodes
+      !         dxel - element spacing
+      !         dt - time step size
+      !         nelem - number of elements
+      ! Outputs:
+      !         coeffs - Legendre expansion coefficients
+      ! ================================================================================
+      USE commonTestParameters
+      IMPLICIT NONE
+      ! Inputs
+      INTEGER, INTENT(IN) :: nelem
+      DOUBLE PRECISION, INTENT(IN) :: dt,dxel
+      DOUBLE PRECISION, DIMENSION(0:nelem,1:meqn), INTENT(IN) :: flx
+      DOUBLE PRECISION, DIMENSION(0:nQuad,1:nelem,1:meqn), INTENT(IN) :: fluxQuad
+      DOUBLE PRECISION, DIMENSION(0:nQuad), INTENT(IN) :: quadWeights
+      DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,0:nQuad), INTENT(IN) :: dLegVals
+      ! Outputs
+      DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,1:nelem,1:meqn), INTENT(INOUT) :: coeffs
+    END SUBROUTINE forwardStep
   END INTERFACE
 
   ! Reshape incoming values
@@ -109,18 +137,18 @@ SUBROUTINE updateSoln1d(q,u,uEdge,dt,dxel,nelem,nx,quadWeights,avgOP,avgOP_LU,&
 
     ! Evaluate expansion at quadrature nodes, compute numerical fluxes at interfaces
     CALL evaluateExpansion(coeffsTmp,nelem,legVals,quadVals)
-    CALL fluxFunction(quadVals,uQuadTmp,nQuad+1,nelem,fluxValsQuad)
+    CALL fluxFunction(quadVals,uQuadTmp,nQuad+1,nelem,fluxQuad)
     CALL numFlux(coeffsTmp,uEdgeTmp,nelem,fluxes)
 
     ! Take forward step
-    !CALL forwardStep
+    CALL forwardStep(coeffsTmp,fluxQuad,fluxes,quadWeights,dLegVals,dxel,dt,nelem)
 
     ! Update coefficients
     SELECT CASE(stage)
     CASE(2)
-!      coeffsTmp = 0.75D0*coeffs + 0.25D0*coeffsTmp
+      coeffsTmp = 0.75D0*coeffs + 0.25D0*coeffsTmp
     CASE(3)
-!      coeffsTmp = coeffs/3d0 + 2D0*coeffsTmp/3D0
+      coeffsTmp = coeffs/3d0 + 2D0*coeffsTmp/3D0
     END SELECT !stage
   ENDDO !stage
 
@@ -130,6 +158,5 @@ SUBROUTINE updateSoln1d(q,u,uEdge,dt,dxel,nelem,nx,quadWeights,avgOP,avgOP_LU,&
       qBar(:,j,m) = MATMUL(avgOp,coeffsTmp(:,j,m))
     ENDDO !j
   ENDDO !m
-
 
 END SUBROUTINE updateSoln1d
