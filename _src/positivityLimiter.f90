@@ -24,7 +24,6 @@ SUBROUTINE positivityLimiter(qBar,nelem,stat,avgVals)
         ENDDO !k
         r = MAX(Mt,0D0)/MAX(Mp,TINY(1D0))
         qBar(:,j,m) = r*qBar(:,j,m) ! Reduce remaining positive masses by reduction factor
-
       ENDDO !j
     ENDDO !m
 	ELSE

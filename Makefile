@@ -1,6 +1,6 @@
 PROCESSOR := $(shell uname -m)
 F90=gfortran
-FFLAGS=-g -C -O2 -ffree-form -I/opt/local/include #-fbounds-check -Wtabs -fcheck=all
+FFLAGS=-g -C -O3 -ffree-form -I/opt/local/include #-fbounds-check -Wtabs -fcheck=all
 
 OBJFLAGS ?=$(FFLAGS)
 LDFLAGS= -L/opt/local/lib -lnetcdf -lnetcdff -framework vecLib
@@ -23,6 +23,7 @@ SOURCES = $(SRCDIR)/tfcn.f90 \
 					$(SRCDIR)/forcingCoeffODE.f90\
 					$(SRCDIR)/computeErrors.f90\
 					$(SRCDIR)/positivityLimiter.f90\
+					$(SRCDIR)/fluxCorrection.f90\
 
 MODULES = $(SRCDIR)/mDGmod.f90 \
 					$(SRCDIR)/commonTestParameters.f90 \

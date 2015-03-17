@@ -128,6 +128,20 @@ SUBROUTINE updateSoln1d(q,u,uEdge,dt,dxel,nelem,nx,quadWeights,avgOP,avgOP_LU,&
       ! Outputs
       DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,1:nelem,1:meqn), INTENT(INOUT) :: qBar
     END SUBROUTINE positivityLimiter
+
+    SUBROUTINE fluxCorrection(coeffs,flx,dxel,dt,nelem)
+    	! Computes flux reductions factors to prevent total mass within each element from going negative
+    	! Outputs fluxcf. fluxcf(j) is the reduction factor for the right face of element j,
+    	!  with fluxcf(0) being the factor for the left domain interface
+      USE commonTestParameters
+    	IMPLICIT NONE
+    	! -- Inputs
+    	INTEGER, INTENT(IN) :: nelem
+    	DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,1:nelem,1:meqn), INTENT(IN) :: coeffs
+    	DOUBLE PRECISION, INTENT(IN) :: dxel,dt
+    	! -- Outputs
+    	DOUBLE PRECISION, DIMENSION(0:nelem,1:meqn), INTENT(INOUT) :: flx
+    END SUBROUTINE fluxCorrection
   END INTERFACE
 
   ! Reshape incoming values
@@ -140,7 +154,6 @@ SUBROUTINE updateSoln1d(q,u,uEdge,dt,dxel,nelem,nx,quadWeights,avgOP,avgOP_LU,&
   uedgeTilde(1:3,0) = uEdge(1:3,nelem)
   uedgeTilde(1:3,nelem+1) = uEdge(1:3,1)
 
-
   CALL projectAverages(coeffs,avgOP_LU,IPIV,qBar,nelem) ! Project incoming q averages
 
   coeffsTmp = coeffs
@@ -152,6 +165,8 @@ SUBROUTINE updateSoln1d(q,u,uEdge,dt,dxel,nelem,nx,quadWeights,avgOP,avgOP_LU,&
     CALL evaluateExpansion(coeffsTmp,nelem,legVals,quadVals)
     CALL fluxFunction(quadVals,uQuadTmp,nQuad+1,nelem,fluxQuad)
     CALL numFlux(coeffsTmp,uEdgeTmp,nelem,fluxes)
+
+    IF(doposlimit) CALL fluxCorrection(coeffsTmp,fluxes,dxel,dt,nelem)
 
     ! Take forward step
     CALL forwardStep(coeffsTmp,fluxQuad,fluxes,quadWeights,dLegVals,dxel,dt,nelem)
