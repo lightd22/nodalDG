@@ -9,7 +9,7 @@
     cflCoeff = 0.9D0    ! Ratio of used CFL number to maximum stable CFL
 
     ! Outputting parameters
-    noutput = 10         ! Number of times to output output, including final time (must be >= 1) (automatically includes ICs)
+    noutput = 2         ! Number of times to output output, including final time (must be >= 1) (automatically includes ICs)
 
     ! Testing parmeters
     meqn = 1            ! Number of tracers being simulated
