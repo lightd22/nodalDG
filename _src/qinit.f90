@@ -20,8 +20,12 @@ SUBROUTINE qinit(xVals,yVals,nx,ny,q)
   DOUBLE PRECISION :: x0,y0
 
   SELECT CASE(testID)
-    CASE(0,1) ! Uniform field
+    CASE(0) ! Uniform field
       q = 1D0
+    CASE(1) ! Sine wave
+      DO j=1,ny
+          q(:,j,1) = sin(2.d0*PI*xVals(:))*sin(2.d0*PI*yVals(j))
+      ENDDO !j
     CASE(5) ! Cosbell deformation from LeVeque
       DO j=1,ny
           r(:,j) = 4D0*SQRT( (xVals-0.25D0)**2 + (yVals(j)-0.25D0)**2 )

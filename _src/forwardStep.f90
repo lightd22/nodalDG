@@ -41,7 +41,7 @@ SUBROUTINE forwardStep(coeffs,fluxQuad,flx,quadWeights,dLegVals,dxel,dt,nelem)
       DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,0:nQuad), INTENT(IN) :: dLegVals
       DOUBLE PRECISION, INTENT(IN) :: fluxR,fluxL
       ! Outputs
-      DOUBLE PRECISION, DIMENSION(0:maxPolyDegree), INTENT(OUT) :: forcingCoeffODE
+      DOUBLE PRECISION, DIMENSION(0:maxPolyDegree) :: forcingCoeffODE
     END FUNCTION forcingCoeffODE
   END INTERFACE
 
@@ -55,5 +55,5 @@ SUBROUTINE forwardStep(coeffs,fluxQuad,flx,quadWeights,dLegVals,dxel,dt,nelem)
       coeffs(:,j,m) = coeffs(:,j,m) + lam*forcingCoeffODE(fluxR,fluxL,localFluxQuad,quadWeights,dLegVals)
     ENDDO !j
   ENDDO !m
-  
+
 END SUBROUTINE forwardStep

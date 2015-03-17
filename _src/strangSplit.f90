@@ -113,30 +113,30 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
         ! Perform sweeps in x-direction first
         ! ===================================
         DO j=1,nyOut
-            q1dx = q(:,j,:)
-            u1dx(1:3,:) = u(1:3,:,j)
-            uEdge1dx(1:3,:) = uEdge(1:3,:,j)
-            CALL updateSoln1d(q1dx,u1dx,uEdge1dx,dt,dxel,nex,nxOut,quadWeights,&
-                              avgOP,avgOP_LU,legendreVal,legendreDeriv,IPIV)
-!            CALL mDGsweep(q1dx,u1dx,uEdge1dx,dxel,nex,nOrder,quadWeights,avgXferOp,avgXferOpLU, &
-!                          legendreVal,legendreDeriv,IPIV,dt,doposlimit,posWeight,maxTime,minTime,&
-!                          totTime)
-            ! Update solution
-            q(:,j,:) = q1dx
+          q1dx = q(:,j,:)
+          u1dx(1:3,:) = u(1:3,:,j)
+          uEdge1dx(1:3,:) = uEdge(1:3,:,j)
+          CALL updateSoln1d(q1dx,u1dx,uEdge1dx,dt,dxel,nex,nxOut,quadWeights,&
+                            avgOP,avgOP_LU,legendreVal,legendreDeriv,IPIV)
+  !            CALL mDGsweep(q1dx,u1dx,uEdge1dx,dxel,nex,nOrder,quadWeights,avgXferOp,avgXferOpLU, &
+  !                          legendreVal,legendreDeriv,IPIV,dt,doposlimit,posWeight,maxTime,minTime,&
+  !                          totTime)
+          ! Update solution
+          q(:,j,:) = q1dx
         ENDDO!j
 
         DO i=1,nxOut
-            q1dy = q(i,:,:)
-            v1dy(1:3,:) = v(1:3,i,:)
-            vEdge1dy(1:3,:) = vEdge(1:3,i,:)
-            CALL updateSoln1d(q1dy,v1dy,vEdge1dy,dt,dyel,ney,nyOut,quadWeights,&
-                              avgOP,avgOP_LU,legendreVal,legendreDeriv,IPIV)
+          q1dy = q(i,:,:)
+          v1dy(1:3,:) = v(1:3,i,:)
+          vEdge1dy(1:3,:) = vEdge(1:3,i,:)
+          CALL updateSoln1d(q1dy,v1dy,vEdge1dy,dt,dyel,ney,nyOut,quadWeights,&
+                            avgOP,avgOP_LU,legendreVal,legendreDeriv,IPIV)
 
-!            CALL mDGsweep(q1dy,v1dy,vEdge1dy,dyel,ney,nOrder,quadWeights,avgXferOp,avgXferOPLU,&
-!                          legendreVal,legendreDeriv,IPIV,dt,doposlimit,posWeight,maxTime,minTime,&
-!                          totTime)
-            ! Update solution
-            q(i,:,:) = q1dy
+  !            CALL mDGsweep(q1dy,v1dy,vEdge1dy,dyel,ney,nOrder,quadWeights,avgXferOp,avgXferOPLU,&
+  !                          legendreVal,legendreDeriv,IPIV,dt,doposlimit,posWeight,maxTime,minTime,&
+  !                          totTime)
+          ! Update solution
+          q(i,:,:) = q1dy
         ENDDO !i
 
     ELSE
@@ -144,30 +144,30 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
         ! Perform sweeps in y-direction first
         ! ===================================
         DO i=1,nxOut
-            q1dy = q(i,:,:)
-            v1dy(1:3,:) = v(1:3,i,:)
-            vEdge1dy(1:3,:) = vEdge(1:3,i,:)
-            CALL updateSoln1d(q1dy,v1dy,vEdge1dy,dt,dyel,ney,nyOut,quadWeights,&
-                              avgOP,avgOP_LU,legendreVal,legendreDeriv,IPIV)
+          q1dy = q(i,:,:)
+          v1dy(1:3,:) = v(1:3,i,:)
+          vEdge1dy(1:3,:) = vEdge(1:3,i,:)
+          CALL updateSoln1d(q1dy,v1dy,vEdge1dy,dt,dyel,ney,nyOut,quadWeights,&
+                            avgOP,avgOP_LU,legendreVal,legendreDeriv,IPIV)
 
 !            CALL mDGsweep(q1dy,v1dy,vEdge1dy,dyel,ney,nOrder,quadWeights,avgXferOp,avgXferOPLU,&
 !                          legendreVal,legendreDeriv,IPIV,dt,doposlimit,posWeight,maxTime,minTime,&
 !                          totTime)
-            ! Update solution
-            q(i,:,:) = q1dy
+          ! Update solution
+          q(i,:,:) = q1dy
         ENDDO !i
 
         DO j=1,nyOut
-            q1dx = q(:,j,:)
-            u1dx(1:3,:) = u(1:3,:,j)
-            uEdge1dx(1:3,:) = uEdge(1:3,:,j)
-            CALL updateSoln1d(q1dx,u1dx,uEdge1dx,dt,dxel,nex,nxOut,quadWeights,&
-                              avgOP,avgOP_LU,legendreVal,legendreDeriv,IPIV)
+          q1dx = q(:,j,:)
+          u1dx(1:3,:) = u(1:3,:,j)
+          uEdge1dx(1:3,:) = uEdge(1:3,:,j)
+          CALL updateSoln1d(q1dx,u1dx,uEdge1dx,dt,dxel,nex,nxOut,quadWeights,&
+                            avgOP,avgOP_LU,legendreVal,legendreDeriv,IPIV)
 !            CALL mDGsweep(q1dx,u1dx,uEdge1dx,dxel,nex,nOrder,quadWeights,avgXferOp,avgXferOpLU, &
 !                          legendreVal,legendreDeriv,IPIV,dt,doposlimit,posWeight,maxTime,minTime,&
 !                          totTime)
-            ! Update solution
-            q(:,j,:) = q1dx
+          ! Update solution
+          q(:,j,:) = q1dx
         ENDDO!j
     ENDIF !oddstep
 END SUBROUTINE strangSplit

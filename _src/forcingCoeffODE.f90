@@ -9,7 +9,7 @@ FUNCTION forcingCoeffODE(fluxR,fluxL,fluxQuadVals,quadWeights,dLegVals)
   DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,0:nQuad), INTENT(IN) :: dLegVals
   DOUBLE PRECISION, INTENT(IN) :: fluxR,fluxL
   ! Outputs
-  DOUBLE PRECISION, DIMENSION(0:maxPolyDegree), INTENT(OUT) :: forcingCoeffODE
+  DOUBLE PRECISION, DIMENSION(0:maxPolyDegree) :: forcingCoeffODE
   ! Local variables
   INTEGER :: k
 

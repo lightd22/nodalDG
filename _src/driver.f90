@@ -22,10 +22,10 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
   INTEGER, DIMENSION(10) :: tmp_method
   INTEGER :: nmethod,nmethod_final,imethod,ierr,i,j,p,n,m
   INTEGER :: nstep,nout
-  REAL(KIND=4) :: t0,tf
+  DOUBLE PRECISION, DIMENSION(1:nRuns,1:meqn) :: e1,e2,ei,cons,tmpqMax,tmpqMin
+  REAL(KIND=4), DIMENSION(1:nRuns) :: t0,tf
   LOGICAL :: oddstep
   DOUBLE PRECISION :: dxel,dyel,dxPlot,dyPlot,tmp_umax,tmp_vmax,calculatedMu,dt,time
-  DOUBLE PRECISION, DIMENSION(1:meqn) :: tmp_qmax,tmp_qmin
   DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: quadNodes,quadWeights,elemCenterX,elemCenterY,&
       xPlot,yPlot,DGx,DGy,FOO
   DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:,:) :: u0,v0,uEdge0,vEdge0,&
@@ -113,6 +113,32 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
         ! Outputs
         REAL(KIND=8), DIMENSION(1:nxOut,1:nyOut,1:meqn), INTENT(INOUT) :: q
       END SUBROUTINE strangSplit
+
+      SUBROUTINE computeErrors(qOut,q0,e1,e2,ei,cons,qMax,qMin,tf,nRuns,nex0,ney0,nscale,stat)
+        ! =============================================================================
+        ! Prints error estimates and other useful information to screen
+        ! INPUTS: qOut - current estimate solution
+        !         q0   - initial conditions
+        !         tf(p) - cput time for pth run
+        !         stat - status integer
+        !         qmax(p,m) - maximum overshoot in appx soln at plotting times
+        !         qmin(p,m) - maximum undershoot in appx soln at plotting times
+        ! OUTPUTS: e1(p,m) - L1 error estimate
+        !          e2(p,m) - L2 error estimate
+        !          ei(p,m) - Linf error estimate
+        !          cons(p,m) - conservation estimate
+        ! =============================================================================
+        USE commonTestParameters
+        IMPLICIT NONE
+        ! Inputs
+        INTEGER, INTENT(IN) :: nRuns,stat,nscale,nex0,ney0
+        DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut,1:meqn), INTENT(IN) :: q0,qOut
+        DOUBLE PRECISION, DIMENSION(1:nRuns,1:meqn), INTENT(IN) :: qMax,qMin
+        REAL(KIND=4), DIMENSION(1:nRuns),INTENT(IN) :: tf
+        ! Outputs
+        DOUBLE PRECISION, DIMENSION(1:nRuns,1:meqn),INTENT(INOUT) :: e1,e2,ei,cons
+      END SUBROUTINE computeErrors
+
   END INTERFACE
   ! =================================================================================
   ! END SUBROUTINE INTERFACES
@@ -145,6 +171,7 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
   DO nmethod = 1,nmethod_final
     imethod = tmp_method(nmethod)
 
+    write(*,*) '********************'
     SELECT CASE(imethod)
       CASE(1)
         write(*,*) 'DG, averages, no limiting'
@@ -157,6 +184,7 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
     END SELECT !imethod
 
     write(*,FMT='(A5,i1)') ' N = ',maxPolyDegree
+    write(*,*) '********************'
 
     nQuad = maxPolyDegree
 
@@ -175,7 +203,7 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
     ENDDO !i
 
     DO p=1,nRuns
-      CALL cpu_time(t0)
+      CALL cpu_time(t0(p))
 
       nex = nex0*nscale**(p-1) ! Number of x elements
       ney = ney0*nscale**(p-1)
@@ -238,8 +266,8 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
       ! Time integration
       ! =====================================================================================================
       DO m=1,meqn
-        tmp_qmax(m) = MAXVAL(q(:,:,m))
-        tmp_qmin(m) = MINVAL(q(:,:,m))
+        tmpqMax(p,m) = MAXVAL(q(:,:,m))
+        tmpqMin(p,m) = MINVAL(q(:,:,m))
       ENDDO !m
 
       oddstep = .TRUE.
@@ -255,20 +283,21 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
           CALL output2d(q,xPlot,yPlot,tfinal,calculatedMu,cdfOut,p,2)
         ENDIF
         DO m=1,meqn
-          tmp_qmin(m) = MIN(tmp_qmin(m),MINVAL(q(:,:,m)))
-          tmp_qmax(m) = MAX(tmp_qmax(m),MAXVAL(q(:,:,m)))
+          tmpqMin(p,m) = MIN(tmpqMin(p,m),MINVAL(q(:,:,m)))
+          tmpqMax(p,m) = MAX(tmpqMax(p,m),MAXVAL(q(:,:,m)))
         ENDDO !m
 
         oddstep = .NOT. oddstep
       ENDDO !n
 
-      CALL cpu_time(tf)
-      tf = tf - t0
-      write(*,*) 'tf=', tf
+      CALL cpu_time(tf(p))
+      tf(p) = tf(p) - t0(p)
+      CALL computeErrors(q,q0,e1,e2,ei,cons,tmpqMax,tmpqMin,tf,nRuns,nex0,ney0,nscale,p)
 
       IF(p == nRuns) THEN
         ! Close output files
         CALL output2d(q,xPlot,yPlot,tfinal,calculatedMu,cdfOut,nout,1)
+        CALL computeErrors(q,q0,e1,e2,ei,cons,tmpqMax,tmpqMin,tf,nRuns,nex0,ney0,nscale,-1)
       ENDIF
 
       DEALLOCATE(elemCenterX,elemCenterY,xPlot,yPlot,DGx,DGy,avgXferOp,avgXferOpLU,IPIV,FOO,&
