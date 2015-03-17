@@ -23,7 +23,7 @@
 
     tfinal = 5D0        ! Final time of integration
 
-    TRANSIENT = .TRUE.  ! Time-dependent flow
+    TRANSIENT = .FALSE.  ! Time-dependent flow
 
     ! Misc parameters
     DEBUG = .FALSE.

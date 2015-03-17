@@ -100,6 +100,13 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
         uEdge(i,:,:) = uEdgetmp
         vEdge(i,:,:) = vEdgetmp
       ENDDO !i
+    ELSE
+      DO i=1,3
+        u(i,:,:) = u0
+        v(i,:,:) = v0
+        uEdge(i,:,:) = uEdge0
+        vEdge(i,:,:) = vEdge0
+      ENDDO !i
     ENDIF !transient
     IF(oddstep) THEN
         ! ===================================

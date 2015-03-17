@@ -42,11 +42,11 @@ SUBROUTINE qinit(xVals,yVals,nx,ny,q)
         END WHERE
 
         DO j=1,ny
-            DO i=1,nx
-                IF(ABS(xVals(i)-x0) .lt. 0.025D0 .AND. yVals(j) .gt.(y0-0.0625D0)) THEN
-                    q(i,j,1) = 0D0
-                ENDIF
-            ENDDO !i
+          DO i=1,nx
+            IF(ABS(xVals(i)-x0) .lt. 0.025D0 .AND. yVals(j) .gt.(y0-0.0625D0)) THEN
+                q(i,j,1) = 0D0
+            ENDIF
+          ENDDO !i
         ENDDO !j
   END SELECT !testID
 END SUBROUTINE qinit
