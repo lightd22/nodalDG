@@ -12,7 +12,7 @@
     noutput = 2         ! Number of times to output output, including final time (must be >= 1) (automatically includes ICs)
 
     ! Testing parmeters
-    meqn = 1            ! Number of tracers being simulated
+    meqn = 2            ! Number of tracers being simulated
 
     testID = 5          ! 0 = Consistency test
                         ! 1 = Uniform diagonal advection

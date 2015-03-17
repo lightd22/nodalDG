@@ -2,7 +2,7 @@
 % By Devin Light 5/1/14
 % ---
 
-function out = plot_2dadv(methname,which_test,ncfilename,res)
+function out = plot_2dadv(methname,which_test,ncfilename,res,meqn)
                       
     Qname = strcat('Q',res{1});
     xname = strcat('x',res{1});
@@ -11,7 +11,16 @@ function out = plot_2dadv(methname,which_test,ncfilename,res)
     maxPolyName = 'maxPoly';
     tname = 'time';
     
-    out.data = nc_varget(ncfilename, Qname);
+    data = nc_varget(ncfilename, Qname);
+    if(ndims(data) > 3)
+        for m=1:meqn
+            qname = ['q',num2str(m)];
+            out.(qname) = squeeze(data(m,:,:,:));
+        end
+    else
+        qname = ['q',num2str(1)];
+        out.(qname) = data;
+    end
     out.x = nc_varget(ncfilename, xname);
     out.y = nc_varget(ncfilename, yname);
     out.t = nc_varget(ncfilename, tname);

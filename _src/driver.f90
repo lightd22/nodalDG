@@ -157,18 +157,17 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
   tmp_method(1) = 1 ! Split modal DG, no limiting
   tmp_method(2) = 2 ! Split modal DG, mass redistribution limiting for positivity
 
-  SELECT CASE(testID)
-    CASE(0)
-      cdfOut = 'spltMod2d_consistency'
-    CASE(1)
-      cdfOut = 'spltMod2d_adv_sine'
-    CASE(5)
-      cdfOut = 'spltMod2d_def_cosinebell'
-    CASE(7)
-      cdfOut = 'spltMod2d_def_cyl'
-  END SELECT !testID
-
   DO nmethod = 1,nmethod_final
+    SELECT CASE(testID)
+      CASE(0)
+        cdfOut = 'spltMod2d_consistency'
+      CASE(1)
+        cdfOut = 'spltMod2d_adv_sine'
+      CASE(5)
+        cdfOut = 'spltMod2d_def_cosinebell'
+      CASE(7)
+        cdfOut = 'spltMod2d_def_cyl'
+    END SELECT !testID
     imethod = tmp_method(nmethod)
 
     write(*,*) '********************'
@@ -259,6 +258,7 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
 
       IF(p==1) THEN ! Set up netCDF output file
         cdfOut = TRIM(outdir)//TRIM(cdfOut)//'.nc'
+        write(*,*) 'Outputting to: ',cdfOut
         CALL output2d(q,xPlot,yPlot,tfinal,calculatedMu,cdfOut,nout,-1)
       ENDIF
       CALL output2d(q,xPlot,yPlot,tfinal,calculatedMu,cdfOut,p,0)
@@ -362,7 +362,5 @@ CONTAINS
     DO j=2,nyOut
       yPlot(j) = yPlot(j-1)+dyPlot
     ENDDO!j
-
-
   END SUBROUTINE makeGrid
 END SUBROUTINE DRIVER
