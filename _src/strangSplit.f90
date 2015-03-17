@@ -118,9 +118,6 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
           uEdge1dx(1:3,:) = uEdge(1:3,:,j)
           CALL updateSoln1d(q1dx,u1dx,uEdge1dx,dt,dxel,nex,nxOut,quadWeights,&
                             avgOP,avgOP_LU,legendreVal,legendreDeriv,IPIV)
-  !            CALL mDGsweep(q1dx,u1dx,uEdge1dx,dxel,nex,nOrder,quadWeights,avgXferOp,avgXferOpLU, &
-  !                          legendreVal,legendreDeriv,IPIV,dt,doposlimit,posWeight,maxTime,minTime,&
-  !                          totTime)
           ! Update solution
           q(:,j,:) = q1dx
         ENDDO!j
@@ -131,10 +128,6 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
           vEdge1dy(1:3,:) = vEdge(1:3,i,:)
           CALL updateSoln1d(q1dy,v1dy,vEdge1dy,dt,dyel,ney,nyOut,quadWeights,&
                             avgOP,avgOP_LU,legendreVal,legendreDeriv,IPIV)
-
-  !            CALL mDGsweep(q1dy,v1dy,vEdge1dy,dyel,ney,nOrder,quadWeights,avgXferOp,avgXferOPLU,&
-  !                          legendreVal,legendreDeriv,IPIV,dt,doposlimit,posWeight,maxTime,minTime,&
-  !                          totTime)
           ! Update solution
           q(i,:,:) = q1dy
         ENDDO !i
@@ -149,10 +142,6 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
           vEdge1dy(1:3,:) = vEdge(1:3,i,:)
           CALL updateSoln1d(q1dy,v1dy,vEdge1dy,dt,dyel,ney,nyOut,quadWeights,&
                             avgOP,avgOP_LU,legendreVal,legendreDeriv,IPIV)
-
-!            CALL mDGsweep(q1dy,v1dy,vEdge1dy,dyel,ney,nOrder,quadWeights,avgXferOp,avgXferOPLU,&
-!                          legendreVal,legendreDeriv,IPIV,dt,doposlimit,posWeight,maxTime,minTime,&
-!                          totTime)
           ! Update solution
           q(i,:,:) = q1dy
         ENDDO !i
@@ -163,9 +152,6 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
           uEdge1dx(1:3,:) = uEdge(1:3,:,j)
           CALL updateSoln1d(q1dx,u1dx,uEdge1dx,dt,dxel,nex,nxOut,quadWeights,&
                             avgOP,avgOP_LU,legendreVal,legendreDeriv,IPIV)
-!            CALL mDGsweep(q1dx,u1dx,uEdge1dx,dxel,nex,nOrder,quadWeights,avgXferOp,avgXferOpLU, &
-!                          legendreVal,legendreDeriv,IPIV,dt,doposlimit,posWeight,maxTime,minTime,&
-!                          totTime)
           ! Update solution
           q(:,j,:) = q1dx
         ENDDO!j

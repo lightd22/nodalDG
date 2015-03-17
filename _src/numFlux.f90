@@ -12,7 +12,9 @@ SUBROUTINE numFlux(coeffs,uEdge,nelem,fluxes)
   DOUBLE PRECISION, DIMENSION(0:nelem,1:meqn), INTENT(OUT) :: fluxes
   ! Local Variables
   INTEGER :: i,m,j,whichSign,whichEl
-  DOUBLE PRECISION, DIMENSION(0:1,0:nelem+1,1:meqn) :: qvals,fluxVals
+  DOUBLE PRECISION, DIMENSION(0:1,1:nelem,1:meqn) :: qvals,fluxVals
+  DOUBLE PRECISION, DIMENSION(0:1,0:nelem+1,1:meqn) :: fluxValsPeriodic
+  DOUBLE PRECISION, DIMENSION(0:1,1:nelem) :: uTmp
 
   INTERFACE
     SUBROUTINE fluxFunction(qvals,uvals,nx,nelem,fluxVals)
@@ -31,18 +33,24 @@ SUBROUTINE numFlux(coeffs,uEdge,nelem,fluxes)
     DO j=1,nelem
       qvals(1,j,m) = SUM(coeffs(:,j,m))
       qvals(0,j,m) = SUM(coeffs(:,j,m)*(/ ((-1D0)**i,i=0,maxPolyDegree) /))
+
+      uTmp(1,j) = uEdge(j)
+      uTmp(0,j) = uEdge(j-1)
     ENDDO !j
-    qvals(:,0,m) = qvals(:,nelem,m)
-    qvals(:,nelem+1,m) = qvals(:,1,m)
   ENDDO !m
 
-  CALL fluxFunction(qvals,uEdge,2,nelem+2,fluxVals)
+  CALL fluxFunction(qvals,uTmp,2,nelem,fluxVals)
+
+  ! Form periodic extension of flux values at element edges
+  fluxValsPeriodic(:,1:nelem,:) = fluxVals
+  fluxValsPeriodic(:,0,:) = fluxVals(:,nelem,:)
+  fluxValsPeriodic(:,nelem+1,:) = fluxVals(:,1,:)
 
   ! NOTE: As written this is not as general as it should be.
   ! Only valid for fluxes of the form F(q) = u*g(q) for some function g
   DO j=0,nelem
     whichSign = 1-0.5D0*(1-(SIGN(1D0,uEdge(j))) )
     whichEl = j+0.5D0*(1-(SIGN(1D0,uEdge(j))) )
-    fluxes(j,:) = fluxVals(whichSign,whichEl,:)
+    fluxes(j,:) = fluxValsPeriodic(whichSign,whichEl,:)
   ENDDO
 END SUBROUTINE numFlux

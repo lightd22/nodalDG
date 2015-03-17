@@ -21,13 +21,40 @@ tests = {'adv_sine', ... % 1, Uniform adv of sine^4
          };
 res = {'1','2','3','4'};
 
-which_test = tests(1);
+which_test = tests(2);
 which_res = res(2);
 
 ncfilename = strcat('spltMod2d_' ,which_test{1}, '.nc');
-%%
+%% Read in data
 nc = ['_pdModal/', ncfilename];
 methname = 'Modal PD';
 out = plot_2dadv(methname,which_test,nc,which_res);
-x = out.x; y = out.y
-contourf(
+
+%%
+close all;
+x = out.x; y = out.y; t = out.t;
+%{
+ics = squeeze(out.data(1,:,:));
+fig = figure();
+contourf(x,y,ics);
+title(['t=' num2str(t(1))]);
+
+fig = figure();
+final = squeeze(out.data(2,:,:));
+contourf(x,y,final);
+title(['t=' num2str(t(2))]);
+
+fig = figure();
+final = squeeze(out.data(end,:,:));
+contourf(x,y,final);
+title(['t=' num2str(t(end))]);
+%}
+
+fig = figure();
+for n=1:length(t)
+    plt = squeeze(out.data(n,:,:));
+    contourf(x,y,plt);
+    title(['t=' num2str(t(n))]);
+    pause(1.0);
+end
+pause(0.5);close all;

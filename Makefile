@@ -22,6 +22,7 @@ SOURCES = $(SRCDIR)/tfcn.f90 \
 					$(SRCDIR)/forwardStep.f90\
 					$(SRCDIR)/forcingCoeffODE.f90\
 					$(SRCDIR)/computeErrors.f90\
+					$(SRCDIR)/positivityLimiter.f90\
 
 MODULES = $(SRCDIR)/mDGmod.f90 \
 					$(SRCDIR)/commonTestParameters.f90 \

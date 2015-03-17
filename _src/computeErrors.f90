@@ -33,8 +33,8 @@ SUBROUTINE computeErrors(qOut,q0,e1,e2,ei,cons,qMax,qMin,tf,nRuns,nex0,ney0,nsca
       WRITE(*,*) '===================='
       WRITE(*,'(a12)') qname
       WRITE(*,*) '===================='
-    WRITE(*,'(A113)') &
-'nex    ney    E1        E2       Einf         convergence rate  maximum   minimum       cons       cputime   tf'
+    WRITE(*,'(A115)') &
+'nex    ney    E1        E2         Einf        convergence rate  maximum   minimum       cons       cputime   tf'
 
       cnvg1 = 0D0
       cnvg2 = 0D0

@@ -15,13 +15,17 @@ SUBROUTINE updateVelocities(u,v,uEdge,vEdge,time)
   DOUBLE PRECISION :: timeFactor
 
   INTERFACE
-    FUNCTION tfcn(t)
-      REAL(KIND=8), INTENT(IN) :: t
+    function tfcn(t)
+      USE commonTestParameters
+      ! Inputs
+      DOUBLE PRECISION, intent(in) :: t
+      ! Outputs
+      DOUBLE PRECISION :: tfcn
     END FUNCTION tfcn
   END INTERFACE
 
   timeFactor = tfcn(time)
-  
+
   u = u*timeFactor
   v = v*timeFactor
   uEdge = uEdge*timeFactor

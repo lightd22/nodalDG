@@ -1,6 +1,6 @@
 &inputs
     ! Spatial element parameters
-    startRes = 6,      ! Which resolution is run first
+    startRes = 12,      ! Which resolution is run first
     nRuns = 3,          ! How many runs are done
     nScale = 2,         ! Ratio between number of elements in successive runs
     maxPolyDegree = 4,  ! Degree of reconstructing polynomial
@@ -9,12 +9,12 @@
     cflCoeff = 0.9D0    ! Ratio of used CFL number to maximum stable CFL
 
     ! Outputting parameters
-    noutput = 2         ! Number of times to output output, including final time (must be >= 1) (automatically includes ICs)
+    noutput = 10         ! Number of times to output output, including final time (must be >= 1) (automatically includes ICs)
 
     ! Testing parmeters
     meqn = 1            ! Number of tracers being simulated
 
-    testID = 1          ! 0 = Consistency test
+    testID = 5          ! 0 = Consistency test
                         ! 1 = Uniform diagonal advection
                         ! 2 = Solid body rotation of cylinder
                         ! 5 = LeVeque deformation of C^3 cosinebell
@@ -23,7 +23,7 @@
 
     tfinal = 5D0        ! Final time of integration
 
-    TRANSIENT = .FALSE.  ! Time-dependent flow
+    TRANSIENT = .TRUE.  ! Time-dependent flow
 
     ! Misc parameters
     DEBUG = .FALSE.

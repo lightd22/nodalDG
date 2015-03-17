@@ -152,10 +152,10 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
   xDomain(2) = 1D0
   yDomain = xDomain
 
-  nmethod_final = 1
+  nmethod_final = 2
   tmp_method = 0
   tmp_method(1) = 1 ! Split modal DG, no limiting
-  tmp_method(1) = 2 ! Split modal DG, mass redistribution limiting for positivity
+  tmp_method(2) = 2 ! Split modal DG, mass redistribution limiting for positivity
 
   SELECT CASE(testID)
     CASE(0)
@@ -203,6 +203,7 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
     ENDDO !i
 
     DO p=1,nRuns
+      write(*,*) 'Beginning run p = ',p
       CALL cpu_time(t0(p))
 
       nex = nex0*nscale**(p-1) ! Number of x elements
@@ -271,6 +272,7 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
       ENDDO !m
 
       oddstep = .TRUE.
+      write(*,*) 'Beginning time step...'
       DO n=1,nstep
         ! Call update
         CALL strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
@@ -280,6 +282,7 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
         time = time + dt
         ! Check if this is output time
         IF((MOD(n,nstep/nout).eq.0).OR.(n.eq.nstep)) THEN ! Write output variables
+          write(*,*) 'Outputting at time =',time
           CALL output2d(q,xPlot,yPlot,tfinal,calculatedMu,cdfOut,p,2)
         ENDIF
         DO m=1,meqn

@@ -29,6 +29,7 @@ SUBROUTINE updateSoln1d(q,u,uEdge,dt,dxel,nelem,nx,quadWeights,avgOP,avgOP_LU,&
   DOUBLE PRECISION, DIMENSION(0:nelem,1:meqn) :: fluxes
   DOUBLE PRECISION, DIMENSION(0:nQuad,1:meqn) :: localSolnQuad
   DOUBLE PRECISION, DIMENSION(0:nQuad) :: localVel
+  DOUBLE PRECISION, DIMENSION(1:nelem,1:meqn) :: elemAverages
   INTEGER :: i,j,k,m,stage
 
   INTERFACE
@@ -116,6 +117,17 @@ SUBROUTINE updateSoln1d(q,u,uEdge,dt,dxel,nelem,nx,quadWeights,avgOP,avgOP_LU,&
       ! Outputs
       DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,1:nelem,1:meqn), INTENT(INOUT) :: coeffs
     END SUBROUTINE forwardStep
+
+    SUBROUTINE positivityLimiter(qBar,nelem,stat,avgVals)
+    	! Subroutine for mass filling within an element to remove negative cell averaged values
+      USE commonTestParameters
+    	IMPLICIT NONE
+    	! Inputs
+    	INTEGER, INTENT(IN) :: nelem,stat
+    	DOUBLE PRECISION, DIMENSION(1:nelem,1:meqn), INTENT(IN) :: avgVals
+      ! Outputs
+      DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,1:nelem,1:meqn), INTENT(INOUT) :: qBar
+    END SUBROUTINE positivityLimiter
   END INTERFACE
 
   ! Reshape incoming values
@@ -127,6 +139,7 @@ SUBROUTINE updateSoln1d(q,u,uEdge,dt,dxel,nelem,nx,quadWeights,avgOP,avgOP_LU,&
   uedgeTilde(1:3,1:nelem) = uEdge(1:3,1:nelem)
   uedgeTilde(1:3,0) = uEdge(1:3,nelem)
   uedgeTilde(1:3,nelem+1) = uEdge(1:3,1)
+
 
   CALL projectAverages(coeffs,avgOP_LU,IPIV,qBar,nelem) ! Project incoming q averages
 
@@ -158,6 +171,11 @@ SUBROUTINE updateSoln1d(q,u,uEdge,dt,dxel,nelem,nx,quadWeights,avgOP,avgOP_LU,&
       qBar(:,j,m) = MATMUL(avgOp,coeffsTmp(:,j,m))
     ENDDO !j
   ENDDO !m
+
+  IF(doposlimit) THEN
+    elemAverages = coeffsTmp(0,:,:)
+    CALL positivityLimiter(qBar,nelem,1,elemAverages)
+  ENDIF!doposlimit
 
   ! Reform original shaped arrays
   DO m=1,meqn
