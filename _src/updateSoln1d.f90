@@ -118,12 +118,12 @@ SUBROUTINE updateSoln1d(q,u,uEdge,dt,dxel,nelem,nx,quadWeights,avgOP,avgOP_LU,&
       DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,1:nelem,1:meqn), INTENT(INOUT) :: coeffs
     END SUBROUTINE forwardStep
 
-    SUBROUTINE positivityLimiter(qBar,nelem,stat,avgVals)
+    SUBROUTINE positivityLimiter(qBar,nelem,avgVals)
     	! Subroutine for mass filling within an element to remove negative cell averaged values
       USE commonTestParameters
     	IMPLICIT NONE
     	! Inputs
-    	INTEGER, INTENT(IN) :: nelem,stat
+    	INTEGER, INTENT(IN) :: nelem
     	DOUBLE PRECISION, DIMENSION(1:nelem,1:meqn), INTENT(IN) :: avgVals
       ! Outputs
       DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,1:nelem,1:meqn), INTENT(INOUT) :: qBar
@@ -189,7 +189,7 @@ SUBROUTINE updateSoln1d(q,u,uEdge,dt,dxel,nelem,nx,quadWeights,avgOP,avgOP_LU,&
 
   IF(doposlimit) THEN
     elemAverages = coeffsTmp(0,:,:)
-    CALL positivityLimiter(qBar,nelem,1,elemAverages)
+    CALL positivityLimiter(qBar,nelem,elemAverages)
   ENDIF!doposlimit
 
   ! Reform original shaped arrays

@@ -1,5 +1,5 @@
 SUBROUTINE init2d(q,u,v,uEdge,vEdge,xPlot,yPlot,quadNodes,dxel,dyel,&
-                  dxPlot,dyPlot,elemCenterX,elemCenterY)
+                  dxPlot,dyPlot,elemCenterX,elemCenterY,reactiveCoeffs)
   ! ==============================================================================
   ! Computes initial conditions for q,u,v fields
   ! INPUTS: meqn - number of fields to evaluate
@@ -10,6 +10,7 @@ SUBROUTINE init2d(q,u,v,uEdge,vEdge,xPlot,yPlot,quadNodes,dxel,dyel,&
   ! OUTPUTS: q(i,j,neq) - initial conditions evaluated for neqth field
   !          u(i,j),v(i,j) - velocities evaluated at quadrature locations
   !          uEdge,vEdge - velocities at edges of each element
+  !          reactiveCoeffs - reaction coefficients at x(i),y(j)
   ! ==============================================================================
   USE commonTestParameters
   IMPLICIT NONE
@@ -21,7 +22,7 @@ SUBROUTINE init2d(q,u,v,uEdge,vEdge,xPlot,yPlot,quadNodes,dxel,dyel,&
   DOUBLE PRECISION, DIMENSION(1:nex), INTENT(IN) :: elemCenterX
   DOUBLE PRECISION, DIMENSION(1:ney), INTENT(IN) :: elemCenterY
   ! Outputs
-  DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut,1:meqn) :: q
+  DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut,1:meqn) :: q,reactiveCoeffs
   DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut) :: u,v
   DOUBLE PRECISION, DIMENSION(1:nex,1:nyOut), INTENT(OUT) :: uEdge
   DOUBLE PRECISION, DIMENSION(1:nxOut,1:ney), INTENT(OUT) :: vEdge
@@ -37,7 +38,7 @@ SUBROUTINE init2d(q,u,v,uEdge,vEdge,xPlot,yPlot,quadNodes,dxel,dyel,&
   DOUBLE PRECISION, DIMENSION(1:nxOut,1:ney,0:1) :: psivEdge
 
   INTERFACE
-    SUBROUTINE qinit(xVals,yVals,nx,ny,q)
+    SUBROUTINE qinit(xVals,yVals,nx,ny,q,reactiveCoeffs)
       USE commonTestParameters
       IMPLICIT NONE
       ! Inputs
@@ -45,12 +46,12 @@ SUBROUTINE init2d(q,u,v,uEdge,vEdge,xPlot,yPlot,quadNodes,dxel,dyel,&
       DOUBLE PRECISION, DIMENSION(1:nx) :: xVals
       DOUBLE PRECISION, DIMENSION(1:ny) :: yVals
       ! Outputs
-      DOUBLE PRECISION, DIMENSION(1:nx,1:ny,1:meqn) :: q
+      DOUBLE PRECISION, DIMENSION(1:nx,1:ny,1:meqn) :: q,reactiveCoeffs
     END SUBROUTINE
   END INTERFACE
 
   ! Compute ICs on plotting grid
-  CALL qinit(xPlot,yPlot,nxOut,nyOut,q)
+  CALL qinit(xPlot,yPlot,nxOut,nyOut,q,reactiveCoeffs)
 
   ! ====================================================
   ! Compute velocities at quad nodes from streamfunction
@@ -87,7 +88,7 @@ SUBROUTINE init2d(q,u,v,uEdge,vEdge,xPlot,yPlot,quadNodes,dxel,dyel,&
         psivEdge(i,:,1) = -xtilde(i,1)+(elemCenterY(:)+0.5D0*dyel)
       ENDDO!i
 
-    CASE(5:7) ! LeVeque deformation flow
+    CASE(2,5:7) ! LeVeque deformation flow
       ! Evaluate stream function for horizontal velocities (1/pi)*sin(pi*xf(i))**2 * sin(pi*yf(j))**2
       DO j=1,nyOut
         psiu(:,j,0) = (SIN(PI*DGx(:))**2 * SIN(PI*ytilde(j,0))**2 )/PI

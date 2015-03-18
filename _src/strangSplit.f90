@@ -1,6 +1,6 @@
 SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
                        legendreVal,legendreDeriv,avgOP,avgOP_LU,IPIV,&
-                       dt,dxel,dyel,oddstep)
+                       dt,dxel,dyel,reactiveCoeffs,oddstep)
 ! =====================================================================================================
 ! strangSplitUpdate is responsible for selecting which slice of subcell volumes is sent to mDGsweep for update to time
 ! level tn+1 following a Strang splitting.
@@ -19,6 +19,7 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
     DOUBLE PRECISION, DIMENSION(0:nQuad), INTENT(IN) :: quadNodes,quadWeights
     DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,0:nQuad), INTENT(IN) :: legendreVal,legendreDeriv
     DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,0:maxPolyDegree),INTENT(IN) :: avgOP,avgOp_LU
+    DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut,1:meqn), INTENT(IN) :: reactiveCoeffs
     INTEGER, DIMENSION(0:maxPolyDegree), INTENT(IN) :: IPIV
     LOGICAL, INTENT(IN) :: oddstep
     ! Outputs
@@ -75,6 +76,28 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
         ! Outputs
         DOUBLE PRECISION, DIMENSION(1:nx,1:meqn), INTENT(INOUT) :: q
       END SUBROUTINE updateSoln1d
+
+      SUBROUTINE reactiveStep(q,dt,reactiveCoeffs)
+        ! ================================================================================
+        ! Takes a single time step to update subcell average values to tn+1
+        ! for "toy chemistry problem"
+        ! dq1/dt = -k1 q1 + k2 q2^2
+        ! dq2/dt = 2 k1 q1 - 2 k2 q2^2
+        ! Currently uses 2-stage, 2nd order Rosenbock Runge-Kutta method with the following parameters:
+        ! (see Durran "Numerical Methods for Fluid Dynamics")
+        ! b1 = b2 = 0.5 ; alpha = 1+1/(2 sqrt(2)) ; a21 = 1 ; alpha21 = -2 alpha
+        !
+        ! INPUTS:
+        ! OUTPUTS: q(i,j,m) - mth field subcell averages updated to new time
+        ! ================================================================================
+        USE commonTestParameters
+        IMPLICIT NONE
+        ! Inputs
+        DOUBLE PRECISION, INTENT(IN) :: dt
+        DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut,1:meqn), INTENT(IN) :: reactiveCoeffs
+        ! Outputs
+        DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut,1:meqn), INTENT(INOUT) :: q
+      END SUBROUTINE reactiveStep
     END INTERFACE
 
     ! Update velocities at times required for ssprk3 update
@@ -132,10 +155,14 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
           q(i,:,:) = q1dy
         ENDDO !i
 
+        IF(doreactive) CALL reactiveStep(q,dt,reactiveCoeffs)
+
     ELSE
         ! ===================================
         ! Perform sweeps in y-direction first
         ! ===================================
+        IF(doreactive) CALL reactiveStep(q,dt,reactiveCoeffs)
+
         DO i=1,nxOut
           q1dy = q(i,:,:)
           v1dy(1:3,:) = v(1:3,i,:)

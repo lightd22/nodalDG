@@ -26,7 +26,7 @@ PROGRAM EXECUTE
     END INTERFACE
 
     NAMELIST /inputs/ startRes,nRuns,nScale,maxPolyDegree,cflCoeff,noutput,meqn, &
-                      testID,tfinal,TRANSIENT,DEBUG
+                      testID,tfinal,TRANSIENT,DOREACTIVE,DEBUG
     inUnit=20
     OPEN(unit=inUnit,file="inputs.nl",action="read")
     READ(inUnit,NML=inputs)
@@ -50,7 +50,7 @@ PROGRAM EXECUTE
         CASE(1)
         	write(*,*) 'TEST 1: Uniform advection (u=v=1)'
         CASE(2)
-        	write(*,*) 'TEST 2: Solid body rotation of cylinder'
+        	write(*,*) 'TEST 2: Reactive Half-plane flow'
         CASE(5)
           write(*,*) 'TEST 5: LeVeque Cosbell Deformation Test'
         CASE(6)

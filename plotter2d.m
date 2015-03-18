@@ -12,10 +12,13 @@ tests = {
          'def_cosinebell', ... % 1, LeVeque deformation test cosinebell                          
          'def_cyl',... % 2, Deformation flow applied to slotted cylinder
          'consistency',... %3 uniform field deformation flow
+         'reactive',... % 4 Reactive half plane flow
          };
 res = {'1','2','3','4'};
 methods = { 'modal',...
-            'modalPD'
+            'modalPDt',...
+            'modalPDr',...
+            'modalPDs',...
           };
 
 whichTest = tests(1);
@@ -23,13 +26,13 @@ whichRes = res(2);
 
 ncfilename = strcat('spltMod2d_' ,whichTest{1}, '.nc');
 %% Read in data
-ntest = 1;
+ntest = 4;
 meqn = 2;
 whichRes = res(2);
 whichTest = tests{ntest};
 
 subDir = '';
-whichMethods = [1 2];
+whichMethods = [2 3];
 ncfilename = strcat('spltMod2d_' ,whichTest, '.nc');
 
 for imethod=1:length(whichMethods)
@@ -41,10 +44,20 @@ for imethod=1:length(whichMethods)
         out = plot_2dadv(methname,whichTest,nc,whichRes,meqn);
         out.figLabel = 'a';
     elseif(nmethod == 2)
-        methname = 'Modal PD';
-        nc = ['_pdModal/' subDir ncfilename];
+        methname = 'Modal PD (trunc)';
+        nc = ['_pdModal/trunc/' subDir ncfilename];
         out = plot_2dadv(methname,whichTest,nc,whichRes,meqn);
         out.figLabel = 'b';
+    elseif(nmethod == 3)
+        methname = 'Modal PD (rescale)';
+        nc = ['_pdModal/rescale/' subDir ncfilename];
+        out = plot_2dadv(methname,whichTest,nc,whichRes,meqn);
+        out.figLabel = 'c';
+    elseif(nmethod == 4)
+        methname = 'Modal PD (strictest)';
+        nc = ['_pdModal/equivscale/' subDir ncfilename];
+        out = plot_2dadv(methname,whichTest,nc,whichRes,meqn);
+        out.figLabel = 'd';
     end
     meth.(methName) = out;
     
@@ -91,6 +104,10 @@ for imethod=1:length(whichMethods)
         xloc1 = 0.1; xloc2 = 0.50;
         yloc1 = 0.65; yloc2 = 0.75;
         excontours = [.05 .75]; clvls = 0.1:0.1:1.0;
+    elseif(ntest == 4)
+        xloc1 = 0.1; xloc2 = 0.6;
+        yloc1 = 0.1; yloc2 = 0.2;
+        excontours = [.05 1.0]; clvls = 0.1:0.1:1.0;
     end
 
     methName = methods{nmethod};
@@ -144,10 +161,10 @@ for imethod=1:length(whichMethods)
         end
 
         if(print_label)
-            if(ntest == 1)
-                hLu = text(0.05,0.95,[currMeth.figLabel ') ' currMeth.method '--' qname],FS,18); 
-                axis([-0.005 1.005 -0.005 1.005]);
-            end
+%            if(ntest == 1 || nTe )
+            hLu = text(0.05,0.95,[currMeth.figLabel ') ' currMeth.method '--' qname],FS,18); 
+            axis([-0.005 1.005 -0.005 1.005]);
+%            end
         end
 
         opos = get(gca,'OuterPosition');
@@ -179,31 +196,46 @@ for imethod=1:length(whichMethods)
         pause(0.5);
     end % m
 end
-%%
-close all;
-x = out.x; y = out.y; t = out.t;
-%{
-ics = squeeze(out.data(1,:,:));
-fig = figure();
-contourf(x,y,ics);
-title(['t=' num2str(t(1))]);
+%% For reactive flows, plot change in 2*q1+q2 (should be constant)
+xwidth = 400; 
+ywidth = 400;
 
-fig = figure();
-final = squeeze(out.data(2,:,:));
-contourf(x,y,final);
-title(['t=' num2str(t(2))]);
+for imethod=1:length(whichMethods)
+    nmethod = whichMethods(imethod);
+    methName = methods{nmethod};
+    currMeth = meth.(methName);
+    
+    disp(['Reading: ' methName]);
+    
+    q1init=squeeze(currMeth.q1(1,:,:));
+    q2init=squeeze(currMeth.q2(1,:,:));
+    qTinit=2*q1init+q2init;
 
-fig = figure();
-final = squeeze(out.data(end,:,:));
-contourf(x,y,final);
-title(['t=' num2str(t(end))]);
-%}
+    q1final=squeeze(currMeth.q1(end,:,:));
+    q2final=squeeze(currMeth.q2(end,:,:));
+    qT=2*q1final+q2final;
+    
+    fig = figure();
+    set(gcf, 'PaperUnits', 'points');
+    set(gcf,'PaperPositionMode','auto','PaperSize',[xwidth ywidth]);
+    set(fig, 'Position', [0 0 xwidth ywidth])
 
-fig = figure();
-for n=1:length(t)
-    plt = squeeze(out.data(n,:,:));
-    contourf(x,y,plt);
-    title(['t=' num2str(t(n))]);
-    pause(1.0);
+    x = currMeth.x;
+    y = currMeth.y;
+
+    clvls = 0.1:0.1:2.0;
+    contourf(x,y,qT,clvls);
+    colorbar;
+    hLu = text(0.05,0.95,[currMeth.figLabel ') ' currMeth.method '-- qT'],FS,18); 
+    axis([-0.005 1.005 -0.005 1.005]);
+
+    
+    normFac = sqrt(mean(qTinit(:).^2));
+    el2 = sqrt(mean( (qT(:)-qTinit(:)).^2 ))/normFac;
+    normFac = max(abs(qTinit(:)));
+    einf = max(abs(qT(:)-qTinit(:)))/normFac;
+    
+    disp(['el2=' num2str(el2)]);
+    disp(['einf=' num2str(einf)]);
+    disp('');
 end
-pause(0.5);close all;

@@ -4,12 +4,12 @@ MODULE commonTestParameters
   ! Used to simplify passing of this information throughout modal subroutines and functions
   ! ========================================================================
   IMPLICIT NONE
-  INTEGER :: nex,ney,nQuad,nxOut,nyOut,meqn,testID,maxPolyDegree
+  INTEGER :: nex,ney,nQuad,nxOut,nyOut,meqn,testID,maxPolyDegree,limitingType
   INTEGER :: cdfID
   INTEGER :: inUnit
   DOUBLE PRECISION, DIMENSION(1:2) :: xDomain,yDomain
   DOUBLE PRECISION :: PI,tfinal
-  LOGICAL :: transient,doposlimit
+  LOGICAL :: transient,doposlimit,doreactive
   CHARACTER(len=24) :: outdir
   SAVE
 
