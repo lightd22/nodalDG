@@ -153,12 +153,12 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
   xDomain(2) = 1D0
   yDomain = xDomain
 
-  nmethod_final = 3
+  nmethod_final = 1
   tmp_method = 0
-  !tmp_method(1) = 1 ! Split modal DG, no limiting
-  tmp_method(1) = 2 ! Split modal DG, mass redistribution limiting for positivity
-  tmp_method(2) = 3 ! Split modal DG, subcell rescaling for positivity
-  tmp_method(3) = 4 ! Split modal DG, strictest subcell rescaling for positivity
+  tmp_method(1) = 1 ! Split modal DG, no limiting
+  tmp_method(2) = 2 ! Split modal DG, mass redistribution limiting for positivity
+  tmp_method(1) = 3 ! Split modal DG, subcell rescaling for positivity
+  tmp_method(1) = 4 ! Split modal DG, strictest subcell rescaling for positivity
 
   DO nmethod = 1,nmethod_final
     SELECT CASE(testID)
@@ -195,7 +195,7 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
         WRITE(*,*) 'DG, averages, equal subscale rescaling'
         doposlimit = .true.
         limitingType = 3
-        outdir = '_pdModal/equivscale/'
+        outdir = '_pdModal/eqscale/'
 
     END SELECT !imethod
 
@@ -259,8 +259,8 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
       ! =====================================================================================================
       time = 0D0
 
-      tmp_umax = MAXVAL(u0)
-      tmp_vmax = MAXVAL(v0)
+      tmp_umax = MAX(MAXVAL(abs(u0)),1D0)
+      tmp_vmax = MAX(MAXVAL(abs(v0)),1D0)
 
       IF(noutput .eq. -1) THEN
           nstep = CEILING( tfinal*MAX(tmp_umax/dxel,tmp_vmax/dyel)/maxcfl )
@@ -269,7 +269,6 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
           nstep = noutput*CEILING( tfinal*MAX(tmp_umax/dxel,tmp_vmax/dyel)/maxcfl/DBLE(noutput) )
           nout = noutput
       ENDIF
-
       dt = tfinal/DBLE(nstep)
       calculatedMu = MAX(tmp_umax/dxel,tmp_vmax/dyel)*dt
       write(*,*) 'Mu used=',calculatedMu

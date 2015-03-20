@@ -71,7 +71,7 @@ SUBROUTINE init2d(q,u,v,uEdge,vEdge,xPlot,yPlot,quadNodes,dxel,dyel,&
   ENDDO
 
   SELECT CASE(testID)
-  CASE(0,1) ! uniform diagonal advection of a sine wave
+    CASE(0,1) ! uniform diagonal advection of a sine wave
       ! Evaluate stream function for horizontal velocities
       DO j=1,nyOut
         psiu(:,j,0) = -DGx(:) + ytilde(j,0)
@@ -87,7 +87,11 @@ SUBROUTINE init2d(q,u,v,uEdge,vEdge,xPlot,yPlot,quadNodes,dxel,dyel,&
         psivEdge(i,:,0) = -xtilde(i,0)+(elemCenterY(:)+0.5D0*dyel)
         psivEdge(i,:,1) = -xtilde(i,1)+(elemCenterY(:)+0.5D0*dyel)
       ENDDO!i
-
+    CASE(99) ! no flow
+      psiu = 0D0
+      psiv = 0D0
+      psiuEdge=0d0
+      psivEdge=0d0
     CASE(2,5:7) ! LeVeque deformation flow
       ! Evaluate stream function for horizontal velocities (1/pi)*sin(pi*xf(i))**2 * sin(pi*yf(j))**2
       DO j=1,nyOut

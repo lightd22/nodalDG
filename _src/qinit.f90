@@ -17,8 +17,25 @@ SUBROUTINE qinit(xVals,yVals,nx,ny,q,reactiveCoeffs)
   DOUBLE PRECISION, DIMENSION(1:nx,1:ny,1:meqn), INTENT(OUT) :: q,reactiveCoeffs
   ! Local variables
   INTEGER :: i,j
-  DOUBLE PRECISION, DIMENSION(1:nx,1:ny) :: r
-  DOUBLE PRECISION :: x0,y0
+  DOUBLE PRECISION, DIMENSION(1:nx,1:ny) :: r,d
+  DOUBLE PRECISION :: x0,y0,qT
+
+  reactiveCoeffs = 0D0
+  IF(doreactive) THEN
+    qT = 4D-6
+    x0 = 0.25D0
+    IF(meqn .ne. 2) then
+      write(*,*) 'ERROR! In qinit().. reactive test only supports meqn = 2'
+      STOP
+    ENDIF
+
+    reactiveCoeffs(:,:,2) = 1D0
+    DO i=1,nx
+      IF(abs(xVals(i)-x0) .le. 0.25D0) THEN
+        reactiveCoeffs(i,:,1) = COS(2D0*PI*(xVals(i)-x0))
+      ENDIF
+    ENDDO !i
+  ENDIF
 
   SELECT CASE(testID)
     CASE(0) ! Uniform field
@@ -27,16 +44,19 @@ SUBROUTINE qinit(xVals,yVals,nx,ny,q,reactiveCoeffs)
       DO j=1,ny
           q(:,j,1) = sin(2.d0*PI*xVals(:))*sin(2.d0*PI*yVals(j))
       ENDDO !j
-    CASE(2) ! Two half plane initial conditions
+    CASE(2) ! Reactive ics
       DO j=1,ny
-        r(:,j) = ABS(xVals(:)-0.25D0)
+        r(:,j) = 0.25D0*reactiveCoeffs(:,j,1)/reactiveCoeffs(:,j,2)!ABS(xVals(:)-0.25D0)
+        d(:,j) = sqrt(r(:,j)*r(:,j)+2D0*qT*r(:,j))
       ENDDO !j
       q = 0D0
-      WHERE(r .lt. 0.25D0)
-        q(:,:,1) = 1D0
-      END WHERE
-      q(:,:,2) = 1D0-q(:,:,1)
-      q(:,:,2) = 2D0*q(:,:,2)
+      q(:,:,2) = d-r
+      q(:,:,1) = 0.5D0*qT-0.5D0*(d-r)
+!      WHERE(r .lt. 0.25D0)
+!        q(:,:,1) = 1D0
+!      END WHERE
+!      q(:,:,2) = 1D0-q(:,:,1)
+!      q(:,:,2) = 2D0*q(:,:,2)
 
     CASE(5) ! Cosbell deformation from LeVeque
       DO j=1,ny
@@ -66,20 +86,4 @@ SUBROUTINE qinit(xVals,yVals,nx,ny,q,reactiveCoeffs)
           ENDDO !i
         ENDDO !j
   END SELECT !testID
-
-  reactiveCoeffs = 0D0
-  IF(doreactive) THEN
-    x0 = 0.25D0
-    IF(meqn .ne. 2) then
-      write(*,*) 'ERROR! In qinit().. reactive test only supports meqn = 2'
-      STOP
-    ENDIF
-
-    reactiveCoeffs(:,:,2) = 1D0
-    DO i=1,nx
-      IF(abs(xVals(i)-x0) .le. 0.25D0) THEN
-        reactiveCoeffs(i,:,1) = COS(2D0*PI*(xVals(i)-x0))
-      ENDIF
-    ENDDO !i
-  ENDIF
 END SUBROUTINE qinit

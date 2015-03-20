@@ -28,11 +28,11 @@ ncfilename = strcat('spltMod2d_' ,whichTest{1}, '.nc');
 %% Read in data
 ntest = 4;
 meqn = 2;
-whichRes = res(2);
+whichRes = res(3);
 whichTest = tests{ntest};
 
 subDir = '';
-whichMethods = [2 3];
+whichMethods = [1 2 3 4];
 ncfilename = strcat('spltMod2d_' ,whichTest, '.nc');
 
 for imethod=1:length(whichMethods)
@@ -43,21 +43,25 @@ for imethod=1:length(whichMethods)
         nc = ['_modal/' subDir ncfilename];
         out = plot_2dadv(methname,whichTest,nc,whichRes,meqn);
         out.figLabel = 'a';
+        out.pltStyle = 'k-';
     elseif(nmethod == 2)
         methname = 'Modal PD (trunc)';
         nc = ['_pdModal/trunc/' subDir ncfilename];
         out = plot_2dadv(methname,whichTest,nc,whichRes,meqn);
         out.figLabel = 'b';
+        out.pltStyle = 'r--';
     elseif(nmethod == 3)
         methname = 'Modal PD (rescale)';
         nc = ['_pdModal/rescale/' subDir ncfilename];
         out = plot_2dadv(methname,whichTest,nc,whichRes,meqn);
         out.figLabel = 'c';
+        out.pltStyle = 'b-.';
     elseif(nmethod == 4)
         methname = 'Modal PD (strictest)';
-        nc = ['_pdModal/equivscale/' subDir ncfilename];
+        nc = ['_pdModal/eqscale/' subDir ncfilename];
         out = plot_2dadv(methname,whichTest,nc,whichRes,meqn);
         out.figLabel = 'd';
+        out.pltStyle = 'g:';
     end
     meth.(methName) = out;
     
@@ -199,7 +203,9 @@ end
 %% For reactive flows, plot change in 2*q1+q2 (should be constant)
 xwidth = 400; 
 ywidth = 400;
-
+FS = 'FontSize'; LW = 'LineWidth';
+figl2 = figure(1);
+figinf = figure(2);
 for imethod=1:length(whichMethods)
     nmethod = whichMethods(imethod);
     methName = methods{nmethod};
@@ -210,32 +216,105 @@ for imethod=1:length(whichMethods)
     q1init=squeeze(currMeth.q1(1,:,:));
     q2init=squeeze(currMeth.q2(1,:,:));
     qTinit=2*q1init+q2init;
-
-    q1final=squeeze(currMeth.q1(end,:,:));
-    q2final=squeeze(currMeth.q2(end,:,:));
-    qT=2*q1final+q2final;
     
-    fig = figure();
+    fprintf('qT min=%6.4e \n',min(qTinit(:)));
+    disp('');
+    fprintf('qT max=%6.4e \n' ,max(qTinit(:)));
+    disp('');
+
+    nt = length(currMeth.t);
+    el2errs = [];
+    einferrs = [];
+    
+    normFac1 = sqrt(mean(qTinit(:).^2));
+    normFac2 = max(abs(qTinit(:)));
+    for n=1:nt
+        q1=squeeze(currMeth.q1(n,:,:));
+        q2=squeeze(currMeth.q2(n,:,:));
+        qT=2*q1+q2;
+
+        el2 = sqrt(mean( (qT(:)-qTinit(:)).^2 ))/normFac1;
+        einf = max(abs(qT(:)-qTinit(:)))/normFac2;
+        
+        el2errs = [el2errs el2];
+        einferrs = [einferrs einf];
+    end
+
+    fig = figure(figl2);
     set(gcf, 'PaperUnits', 'points');
     set(gcf,'PaperPositionMode','auto','PaperSize',[xwidth ywidth]);
     set(fig, 'Position', [0 0 xwidth ywidth])
-
-    x = currMeth.x;
-    y = currMeth.y;
-
-    clvls = 0.1:0.1:2.0;
-    contourf(x,y,qT,clvls);
-    colorbar;
-    hLu = text(0.05,0.95,[currMeth.figLabel ') ' currMeth.method '-- qT'],FS,18); 
-    axis([-0.005 1.005 -0.005 1.005]);
-
-    
-    normFac = sqrt(mean(qTinit(:).^2));
-    el2 = sqrt(mean( (qT(:)-qTinit(:)).^2 ))/normFac;
-    normFac = max(abs(qTinit(:)));
-    einf = max(abs(qT(:)-qTinit(:)))/normFac;
-    
-    disp(['el2=' num2str(el2)]);
-    disp(['einf=' num2str(einf)]);
+    hold on,plot(currMeth.t,el2errs,currMeth.pltStyle,LW,2);
     disp('');
+    
+    fig = figure(figinf);
+    set(gcf, 'PaperUnits', 'points');
+    set(gcf,'PaperPositionMode','auto','PaperSize',[xwidth ywidth]);
+    set(fig, 'Position', [xwidth 0 xwidth ywidth])
+    hold on,plot(currMeth.t,einferrs,currMeth.pltStyle,LW,2);
 end
+fig = figure(figl2);
+set(gca,'YScale','log');
+xlabel('time',FS,14); ylabel('L_2 Error',FS,14);
+hLu = text(0.25,3.5,['a) L_2 Normalized Errors'],FS,18); 
+set(gca,FS,14);
+axis([0 5 10^(-6) 10]); box on;
+
+name = '_figs/term_N4E48_l2.pdf';
+print(fig,name,'-dpdf');
+
+fig = figure(figinf);
+set(gca,'YScale','log');
+xlabel('time',FS,14); ylabel('L_{\infty} Error',FS,14);
+hLu = text(0.25,3.5,['b) L_{\infty} Normalized Errors'],FS,18); 
+set(gca,FS,14);
+axis([0 5 10^(-6) 10]); box on;
+
+name = '_figs/term_N4E48_einf.pdf';
+print(fig,name,'-dpdf');
+
+%% Make IC plots
+FS = 'FontSize';
+qT = 4*10^(-6);
+
+x = meth.modal.x; y = meth.modal.y;
+fig = figure();
+set(gcf, 'PaperUnits', 'points');
+set(gcf,'PaperPositionMode','auto','PaperSize',[xwidth ywidth]);
+set(fig, 'Position', [0 0 xwidth ywidth])
+
+q1 = squeeze(meth.modal.q1(1,:,:));
+contourf(x,y,q1);
+colorbar;
+caxis([0 qT]);
+hLu = text(0.05,1.03,['a) Cl_2(x,y,0)'],FS,18); 
+xlabel('x',FS,14); ylabel('y',FS,14);
+set(gca,FS,14);
+
+name = '_figs/cl2_ics.pdf';
+print(fig,name,'-dpdf');
+
+fig = figure();
+set(gcf, 'PaperUnits', 'points');
+set(gcf,'PaperPositionMode','auto','PaperSize',[xwidth ywidth]);
+set(fig, 'Position', [0 0 xwidth ywidth])
+
+q2 = squeeze(meth.modal.q2(1,:,:));
+contourf(x,y,q2);
+hLu = text(0.05,1.05,['b) Cl(x,y,0)'],FS,18); 
+colorbar;
+caxis([0 qT]);
+set(gca,FS,14);
+set(gca,'YTickLabel',''); xlabel('x',FS,14); 
+
+name = '_figs/cl_ics.pdf';
+print(fig,name,'-dpdf');
+
+%% Coeff k1
+k1 = zeros(length(x),length(y));
+xloc = x<0.5;
+for j=1:length(y)
+    k1(xloc,j) = cos(2.0*pi*(x(xloc)-0.5));
+end
+
+%contourf(x,y,k1);
