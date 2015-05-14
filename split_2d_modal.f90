@@ -5,8 +5,8 @@
 ! Dependencies:
 ! 	netCDF
 !	  LAPACK
-!	  mDGmod.f90 ; mDGsweep.f90 ; tfcn.f90 ; inputs.nl
-! By: Devin Light ; Sept. 2014
+!
+! By: Devin Light ; Mar. 2015
 ! =====================================
 
 PROGRAM EXECUTE

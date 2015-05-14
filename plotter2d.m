@@ -311,10 +311,48 @@ name = '_figs/cl_ics.pdf';
 print(fig,name,'-dpdf');
 
 %% Coeff k1
+fig = figure();
+set(gcf, 'PaperUnits', 'points');
+set(gcf,'PaperPositionMode','auto','PaperSize',[xwidth ywidth]);
+set(fig, 'Position', [0 0 xwidth ywidth])
+
 k1 = zeros(length(x),length(y));
 xloc = x<0.5;
 for j=1:length(y)
-    k1(xloc,j) = cos(2.0*pi*(x(xloc)-0.5));
+    k1(j,xloc) = cos(2.0*pi*(x(xloc)-0.25));
 end
 
-%contourf(x,y,k1);
+contourf(x,y,k1);
+colorbar;
+xlabel('x',FS,14);ylabel('y',FS,14);set(gca,FS,14);
+title('k1(x,y)',FS,14);
+name = '_figs/k1.pdf';
+print(fig,name,'-dpdf');
+
+%% 
+qT = 4*10^(-6);
+for imethod = 1:length(whichMethods)
+    nmethod = whichMethods(imethod);
+    methName = methods{nmethod};
+    currMeth = meth.(methName);
+    
+    fig = figure();
+    set(gcf, 'PaperUnits', 'points');
+    set(gcf,'PaperPositionMode','auto','PaperSize',[xwidth ywidth]);
+    set(fig, 'Position', [0 0 xwidth ywidth])
+
+    
+    q1 = squeeze(currMeth.q1(end,:,:));
+    q2 = squeeze(currMeth.q2(end,:,:));
+    qTf = 2.*q1+q2;
+    max(qTf(:))
+    min(qTf(:))
+    contourf(x,y,qTf);
+    colorbar; caxis([0 5*10^(-6)]);
+    hLu = text(0.05,1.03,[currMeth.figLabel ') Cl_T(x,y,5)'],FS,18); 
+    xlabel('x',FS,14); ylabel('y',FS,14);
+    set(gca,FS,14);
+    name = ['_figs/' methName '_N4E48_final.pdf'];
+    print(fig,name,'-dpdf');
+
+end

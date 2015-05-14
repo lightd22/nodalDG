@@ -17,7 +17,7 @@ SUBROUTINE reactiveForcing(forcing,qVals,forcingCoeffs)
   INTEGER :: j
 
   if(meqn > 2) then
-    write(*,*) 'in reactiveForcing: warning! not set up for more than three reacting tracers'
+    write(*,*) 'in reactiveForcing: warning! not set up for more than two reacting tracers'
     STOP
   endif
 
