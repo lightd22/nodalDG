@@ -29,12 +29,13 @@ SUBROUTINE qinit(xVals,yVals,nx,ny,q,reactiveCoeffs)
       STOP
     ENDIF
 
-    reactiveCoeffs(:,:,2) = 1D0
-    DO i=1,nx
-      IF(abs(xVals(i)-x0) .le. 0.25D0) THEN
-        reactiveCoeffs(i,:,1) = COS(2D0*PI*(xVals(i)-x0))
-      ENDIF
-    ENDDO !i
+    reactiveCoeffs(:,:,1) = 1D0
+    reactiveCoeffs(:,:,2) = 0D0
+!    DO i=1,nx
+!      IF(abs(xVals(i)-x0) .le. 0.25D0) THEN
+!        reactiveCoeffs(i,:,1) = COS(2D0*PI*(xVals(i)-x0))
+!      ENDIF
+!    ENDDO !i
   ENDIF
 
   SELECT CASE(testID)
@@ -44,7 +45,7 @@ SUBROUTINE qinit(xVals,yVals,nx,ny,q,reactiveCoeffs)
       DO j=1,ny
           q(:,j,1) = sin(2.d0*PI*xVals(:))*sin(2.d0*PI*yVals(j))
       ENDDO !j
-    CASE(2) ! Reactive ics
+    CASE(2) ! Terminator ics
       DO j=1,ny
         r(:,j) = 0.25D0*reactiveCoeffs(:,j,1)/reactiveCoeffs(:,j,2)!ABS(xVals(:)-0.25D0)
         d(:,j) = sqrt(r(:,j)*r(:,j)+2D0*qT*r(:,j))
@@ -66,7 +67,9 @@ SUBROUTINE qinit(xVals,yVals,nx,ny,q,reactiveCoeffs)
       WHERE(r .lt. 1D0)
           q(:,:,1) = 0.25D0*(1D0+DCOS(PI*r))**2
       END WHERE
-      q(:,:,2) = q(:,:,1)
+      !q(:,:,2) = q(:,:,1)
+      q(:,:,2) = 1D0
+
     CASE(7) ! Slotted cylinder in deformation flow
         x0 = 0.25D0
         y0 = 0.5D0

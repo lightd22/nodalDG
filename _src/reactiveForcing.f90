@@ -22,7 +22,9 @@ SUBROUTINE reactiveForcing(forcing,qVals,forcingCoeffs)
   endif
 
   ! Evaluate forcing function at grid points
-  forcing(1) = -forcingCoeffs(1)*qVals(1)+forcingCoeffs(2)*qVals(2)**2
-  forcing(2) = -2D0*forcing(1)
+!  forcing(1) = -forcingCoeffs(1)*qVals(1)+forcingCoeffs(2)*qVals(2)**2
+!  forcing(2) = -2D0*forcing(1)
+  forcing(1) = -forcingCoeffs(1)*qVals(1)*qvals(2)
+  forcing(2) = -1D0*forcing(1)
 
 END SUBROUTINE reactiveForcing
