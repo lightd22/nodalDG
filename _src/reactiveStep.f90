@@ -6,7 +6,7 @@ SUBROUTINE reactiveStep(q,dt,forcingCoeffs)
   ! dq2/dt = 2 k1 q1 - 2 k2 q2^2
   ! Currently uses 2-stage, 2nd order Rosenbock Runge-Kutta method with the following parameters:
   ! (see Durran "Numerical Methods for Fluid Dynamics")
-  ! b1 = b2 = 0.5 ; alpha = 1+1/(2 sqrt(2)) ; a21 = 1 ; alpha21 = -2 alpha
+  ! b1 = b2 = 0.5 ; alpha = 1+0.5*sqrt(2) ; a21 = 1 ; alpha21 = -2 alpha
   !
   ! INPUTS:
   ! OUTPUTS: q(i,j,m) - mth field subcell averages updated to new time
@@ -65,7 +65,8 @@ SUBROUTINE reactiveStep(q,dt,forcingCoeffs)
     END SUBROUTINE reactiveForcing
   END INTERFACE
 
-  alpha = 1D0+0.5D0/sqrt(2D0)
+  !alpha = 1D0+0.5D0/sqrt(2D0)
+  alpha = 1D0+0.5D0*sqrt(2D0)
   alpha21 = -2D0*alpha
 
   eye = 0D0
@@ -84,18 +85,17 @@ SUBROUTINE reactiveStep(q,dt,forcingCoeffs)
       localQ = q(i,j,:)
 
       CALL reactiveForcing(fRHS,localQ,localCoeffs)
-      fRHS = dt*fRHS
       ! Solve for first stage
       CALL DGESV(meqn,1,A,meqn,IPIV,fRHS,meqn,ierr)
       localQ1 = fRHS
 
-      CALL reactiveForcing(fRHS,localQ1+localQ,localCoeffs)
-      fRHS = dt*fRHS-alpha21*dt*MATMUL(jac(i,j,:,:),localQ1)
+      CALL reactiveForcing(fRHS,localQ+dt*localQ1,localCoeffs)
+      fRHS = fRHS-2D0*localQ1
       ! Solve for second stage
       CALL DGESV(meqn,1,A,meqn,IPIV,fRHS,meqn,ierr)
       localQ2 = fRHS
 
-      q(i,j,:) = q(i,j,:)+0.5D0*(localQ1+localQ2)
+      q(i,j,:) = q(i,j,:)+0.5D0*dt*(3D0*localQ1+localQ2)
     ENDDO !j
   ENDDO !i
 END SUBROUTINE reactiveStep

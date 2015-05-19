@@ -13,6 +13,9 @@ SUBROUTINE positivityLimiter(qBar,nelem,avgVals)
   DOUBLE PRECISION, DIMENSION(1:meqn) :: rTmp
 
 	IF(limitingType .eq. 1) THEN
+    ! ===============================================================================================
+    ! TYPE 1: TMAR (2015) Limiting
+    ! ===============================================================================================
     DO m=1,meqn
       DO j=1,nelem
         Mp = 0D0
@@ -29,7 +32,7 @@ SUBROUTINE positivityLimiter(qBar,nelem,avgVals)
     ENDDO !m
 	ELSEIF(limitingType .eq. 2) THEN
 		! ===============================================================================================
-		! ALTERNATIVE: Replace truncation mass redistribution with rescaling similar to Zhang and Shu (2010)
+		! TYPE 2: Replace truncation mass redistribution with rescaling similar to Zhang and Shu (2010)
 		! ===============================================================================================
     DO m=1,meqn
       DO j=1,nelem
@@ -40,6 +43,9 @@ SUBROUTINE positivityLimiter(qBar,nelem,avgVals)
       ENDDO !j
     ENDDO !m
   ELSEIF(limitingType .eq. 3) THEN
+    ! ===============================================================================================
+    ! TYPE 3: 'Strict' ZS Rescaling
+    ! ===============================================================================================
     DO j=1,nelem
       rTmp = 0D0
       ! Let each field determine its 'desired' limiting ratio

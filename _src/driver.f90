@@ -18,7 +18,7 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
   REAL(KIND=8), INTENT(IN) :: maxCFL
   ! Outputs
   ! Local variables
-  CHARACTER(len=40) :: cdfOut
+  CHARACTER(len=60) :: cdfOut
   INTEGER, DIMENSION(10) :: tmp_method
   INTEGER :: nmethod,nmethod_final,imethod,ierr,i,j,p,n,m
   INTEGER :: nstep,nout
@@ -153,12 +153,12 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
   xDomain(2) = 1D0
   yDomain = xDomain
 
-  nmethod_final = 1
+  nmethod_final = 3
   tmp_method = 0
   tmp_method(1) = 1 ! Split modal DG, no limiting
-  tmp_method(2) = 2 ! Split modal DG, mass redistribution limiting for positivity
-  tmp_method(1) = 3 ! Split modal DG, subcell rescaling for positivity
-  tmp_method(1) = 4 ! Split modal DG, strictest subcell rescaling for positivity
+  tmp_method(2) = 2 ! Split modal DG, TMAR limiting for positivity
+  tmp_method(3) = 3 ! Split modal DG, subcell rescaling for positivity
+  tmp_method(4) = 4 ! Split modal DG, strictest subcell rescaling for positivity
 
   DO nmethod = 1,nmethod_final
     SELECT CASE(testID)
@@ -182,7 +182,7 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
         doposlimit = .false.
         outdir = '_modal/'
       CASE(2)
-        write(*,*) 'DG, averages, element mass trunction'
+        write(*,*) 'DG, averages, TMAR limiting'
         doposlimit = .true.
         limitingType = 1
         outdir = '_pdModal/trunc/'
@@ -271,7 +271,7 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
       ENDIF
       dt = tfinal/DBLE(nstep)
       calculatedMu = MAX(tmp_umax/dxel,tmp_vmax/dyel)*dt
-      write(*,*) 'Mu used=',calculatedMu
+      write(*,'(A,E12.4,A,I5)') 'Mu used=',calculatedMu,' nsteps used=',nstep
 
       IF(p==1) THEN ! Set up netCDF output file
         cdfOut = TRIM(outdir)//TRIM(cdfOut)//'.nc'

@@ -121,5 +121,5 @@ SUBROUTINE init2d(q,u,v,uEdge,vEdge,xPlot,yPlot,quadNodes,dxel,dyel,&
     v(i,:) = -1D0*(psiv(i,:,1)-psiv(i,:,0))/dxPlot
     vEdge(i,:) = -1D0*(psivEdge(i,:,1)-psivEdge(i,:,0))/dxPlot
   ENDDO!i
-
+  
 END SUBROUTINE init2d

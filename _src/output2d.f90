@@ -11,7 +11,7 @@ SUBROUTINE output2d(q,xOut,yOut,timeOut,muOut,cdfOut,ilvl,stat)
   IMPLICIT NONE
   ! Inputs
   INTEGER, INTENT(IN) :: ilvl,stat
-  CHARACTER(len=40), INTENT(IN) :: cdfOut
+  CHARACTER(len=60), INTENT(IN) :: cdfOut
   DOUBLE PRECISION, INTENT(IN) :: muOut,timeOut
   DOUBLE PRECISION, DIMENSION(1:nxOut), INTENT(IN) :: xOut
   DOUBLE PRECISION, DIMENSION(1:nyOut), INTENT(IN) :: yOut

@@ -14,7 +14,7 @@
     ! Testing parmeters
     meqn = 2            ! Number of tracers being simulated
 
-    testID = 2          ! 0 = Consistency test
+    testID = 5          ! 0 = Consistency test
                         ! 1 = Uniform diagonal advection
                         ! 2 = Reactive def. ICs
                         ! 5 = LeVeque deformation of C^3 cosinebell
@@ -23,7 +23,7 @@
 
     tfinal = 5D0        ! Final time of integration
 
-    TRANSIENT = .T.  ! Time-dependent flow
+    TRANSIENT = .TRUE.  ! Time-dependent flow
     DOREACTIVE = .TRUE. ! Reactive flow
 
     ! Misc parameters
