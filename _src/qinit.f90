@@ -38,6 +38,7 @@ SUBROUTINE qinit(xVals,yVals,nx,ny,q,reactiveCoeffs)
 !    ENDDO !i
   ENDIF
 
+  q = 0D0
   SELECT CASE(testID)
     CASE(0) ! Uniform field
       q = 1D0

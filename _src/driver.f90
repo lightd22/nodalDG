@@ -9,7 +9,7 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
   !   maxCFL    : maximal CFL number to use throughout integration
   ! ===============================================================
   USE commonTestParameters
-  USE mDGmod
+  USE nDGmod
   USE netCDF
 
   IMPLICIT NONE
@@ -27,9 +27,9 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
   LOGICAL :: oddstep
   DOUBLE PRECISION :: dxel,dyel,dxPlot,dyPlot,tmp_umax,tmp_vmax,calculatedMu,dt,time
   DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:) :: quadNodes,quadWeights,elemCenterX,elemCenterY,&
-      xPlot,yPlot,DGx,DGy,FOO
+      xPlot,yPlot,DGx,DGy,FOO,baryWeights
   DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:,:) :: u0,v0,uEdge0,vEdge0,&
-                                  avgXferOp,avgXferOpLU,legendreVal,legendreDeriv
+                                  avgXferOp,avgXferOpLU,basisPolyVal,basisPolyDeriv
   DOUBLE PRECISION, ALLOCATABLE, DIMENSION(:,:,:) :: q,q0,reactiveCoeffs
   INTEGER, ALLOCATABLE, DIMENSION(:) :: IPIV
 
@@ -89,7 +89,7 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
     END SUBROUTINE output2d
 
     SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
-                           legendreVal,legendreDeriv,avgXferOp,avgXferOpLU,IPIV,&
+                           basisPolyVal,basisPolyDeriv,avgXferOp,avgXferOpLU,IPIV,&
                            dt,dxel,dyel,reactiveCoeffs,oddstep)
     ! =====================================================================================================
     ! strangSplitUpdate is responsible for selecting which slice of subcell volumes is sent to mDGsweep for update to time
@@ -107,7 +107,7 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
         REAL(KIND=8), DIMENSION(1:nex,1:nyOut), INTENT(IN) :: uEdge0
         REAL(KIND=8), DIMENSION(1:nxOut,1:ney), INTENT(IN) :: vEdge0
         REAL(KIND=8), DIMENSION(0:nQuad), INTENT(IN) :: quadNodes,quadWeights
-        REAL(KIND=8), DIMENSION(0:maxPolyDegree,0:nQuad), INTENT(IN) :: legendreVal,legendreDeriv,avgXferOp,avgXferOpLU
+        REAL(KIND=8), DIMENSION(0:maxPolyDegree,0:nQuad), INTENT(IN) :: basisPolyVal,basisPolyDeriv,avgXferOp,avgXferOpLU
         DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut,1:meqn), INTENT(IN) :: reactiveCoeffs
         INTEGER, DIMENSION(0:maxPolyDegree), INTENT(IN) :: IPIV
         LOGICAL, INTENT(IN) :: oddstep
@@ -115,15 +115,16 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
         REAL(KIND=8), DIMENSION(1:nxOut,1:nyOut,1:meqn), INTENT(INOUT) :: q
       END SUBROUTINE strangSplit
 
-      SUBROUTINE computeErrors(qOut,q0,e1,e2,ei,cons,qMax,qMin,tf,nRuns,nex0,ney0,nscale,stat)
+      SUBROUTINE computeErrors(qOut,q0,quadWeights,e1,e2,ei,cons,qMax,qMin,tf,nRuns,nscale,stat)
         ! =============================================================================
         ! Prints error estimates and other useful information to screen
         ! INPUTS: qOut - current estimate solution
         !         q0   - initial conditions
+        !         quadWeights - quadrature weights (used in conservation estimation)
         !         tf(p) - cput time for pth run
         !         stat - status integer
-        !         qmax(p,m) - maximum overshoot in appx soln at plotting times
-        !         qmin(p,m) - maximum undershoot in appx soln at plotting times
+        !         ovrshoot(p,m) - maximum overshoot in appx soln at plotting times
+        !         undrshoot(p,m) - maximum undershoot in appx soln at plotting times
         ! OUTPUTS: e1(p,m) - L1 error estimate
         !          e2(p,m) - L2 error estimate
         !          ei(p,m) - Linf error estimate
@@ -132,9 +133,10 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
         USE commonTestParameters
         IMPLICIT NONE
         ! Inputs
-        INTEGER, INTENT(IN) :: nRuns,stat,nscale,nex0,ney0
+        INTEGER, INTENT(IN) :: nRuns,stat,nscale
         DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut,1:meqn), INTENT(IN) :: q0,qOut
         DOUBLE PRECISION, DIMENSION(1:nRuns,1:meqn), INTENT(IN) :: qMax,qMin
+        DOUBLE PRECISION, DIMENSION(0:nQuad), INTENT(IN) :: quadWeights
         REAL(KIND=4), DIMENSION(1:nRuns),INTENT(IN) :: tf
         ! Outputs
         DOUBLE PRECISION, DIMENSION(1:nRuns,1:meqn),INTENT(INOUT) :: e1,e2,ei,cons
@@ -153,49 +155,51 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
   xDomain(2) = 1D0
   yDomain = xDomain
 
-  nmethod_final = 3
+  nmethod_final = 1
   tmp_method = 0
-  tmp_method(1) = 1 ! Split modal DG, no limiting
-  tmp_method(2) = 2 ! Split modal DG, TMAR limiting for positivity
-  tmp_method(3) = 3 ! Split modal DG, subcell rescaling for positivity
-  tmp_method(4) = 4 ! Split modal DG, strictest subcell rescaling for positivity
+  tmp_method(1) = 1 ! Split nodal DG, no limiting
+  tmp_method(2) = 2 ! Split nodal DG, TMAR limiting for positivity
+  tmp_method(3) = 3 ! Split nodal DG, subcell rescaling for positivity
+  tmp_method(4) = 4 ! Split nodal DG, strictest subcell rescaling for positivity
 
   DO nmethod = 1,nmethod_final
     SELECT CASE(testID)
       CASE(0)
-        cdfOut = 'spltMod2d_consistency'
+        cdfOut = 'splt2d_consistency'
       CASE(1)
-        cdfOut = 'spltMod2d_adv_sine'
+        cdfOut = 'splt2d_adv_sine'
       CASE(2)
-        cdfOut = 'spltMod2d_reactive'
+        cdfOut = 'splt2d_reactive'
       CASE(5)
-        cdfOut = 'spltMod2d_def_cosinebell'
+        cdfOut = 'splt2d_def_cosinebell'
       CASE(7)
-        cdfOut = 'spltMod2d_def_cyl'
+        cdfOut = 'splt2d_def_cyl'
+      CASE(99)
+        cdfOut = 'splt2d_non_adv'
     END SELECT !testID
     imethod = tmp_method(nmethod)
 
     write(*,*) '********************'
     SELECT CASE(imethod)
       CASE(1)
-        write(*,*) 'DG, averages, no limiting'
+        write(*,*) 'DG, nodal, no limiting'
         doposlimit = .false.
-        outdir = '_modal/'
+        outdir = '_nodal/'
       CASE(2)
-        write(*,*) 'DG, averages, TMAR limiting'
+        write(*,*) 'DG, nodal, TMAR limiting'
         doposlimit = .true.
         limitingType = 1
-        outdir = '_pdModal/trunc/'
+        outdir = '_pdNodal/tmar/'
       CASE(3)
-        write(*,*) 'DG, averages, subcell rescaling'
+        write(*,*) 'DG, nodal, subcell rescaling'
         doposlimit = .true.
         limitingType = 2
-        outdir = '_pdModal/rescale/'
+        outdir = '_pdNodal/rescale/'
       CASE(4)
-        WRITE(*,*) 'DG, averages, equal subscale rescaling'
+        WRITE(*,*) 'DG, nodal, equal subscale rescaling'
         doposlimit = .true.
         limitingType = 3
-        outdir = '_pdModal/eqscale/'
+        outdir = '_pdNodal/eqscale/'
 
     END SELECT !imethod
 
@@ -204,19 +208,20 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
 
     nQuad = maxPolyDegree
 
-    ALLOCATE(quadNodes(0:nQuad),quadWeights(0:nQuad),legendreVal(0:maxPolyDegree,0:nQuad),&
-            legendreDeriv(0:maxPolyDegree,0:nQuad),STAT=ierr)
+    ALLOCATE(quadNodes(0:nQuad),quadWeights(0:nQuad),basisPolyVal(0:maxPolyDegree,0:nQuad),&
+            basisPolyDeriv(0:maxPolyDegree,0:nQuad),baryWeights(0:nQuad),STAT=ierr)
 
-    CALL quad_nodes(nQuad+1,quadNodes)
-    CALL quad_weights(nQuad+1,quadNodes,quadWeights)
+    CALL gllquad_nodes(nQuad,quadNodes)
+    CALL gllquad_weights(nQuad,quadNodes,quadWeights)
 
-    ! Fill array of Legendre polynomials evaluated at quad nodes + Leg. derivative at quad nodes
+    ! Fill array of Basis polynomials evaluated at quad nodes + derivative at quad nodes
+    CALL fillBaryWeights(baryWeights,quadNodes,nQuad) ! Barycentric weights for basis polynomials
     DO i=0,maxPolyDegree
       DO j=0,nQuad
-        legendreVal(i,j) = legendre(quadNodes(j),i)
-        legendreDeriv(i,j) = dlegendre(quadNodes(j),i)
+        basisPolyVal(i,j) = lagrange(quadNodes(j),i,nQuad,quadNodes,baryWeights)
       ENDDO !j
     ENDDO !i
+    CALL Dmat(nQuad,quadNodes,basisPolyDeriv)
 
     DO p=1,nRuns
       write(*,*) 'Beginning run p = ',p
@@ -236,16 +241,7 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
                IPIV(0:maxPolyDegree),FOO(0:maxPolyDegree),STAT=ierr)
 
       ! Create plotting grids
-      CALL makeGrid(dxel,dyel,elemCenterX,elemCenterY,dxPlot,dyPlot,xPlot,yPlot)
-
-      ! =====================================================================================================
-      ! Fill in operator used to transfer between subcell averages on plotting grid and DG modal coeffs
-      ! =====================================================================================================
-      CALL Cmat_FILL(maxPolyDegree,quadNodes,quadWeights,dxPlot,dxel,avgXferOp,'avgs') ! Assumes an evenly spaced sub-grid
-      ! Compute LU decomposition of avgXferOp, stored in avgXferOpLU
-      avgXferOpLU = avgXferOp
-      FOO = 0D0
-      CALL DGESV(maxPolyDegree+1,1,avgXferOpLU,maxPolyDegree+1,IPIV,FOO,maxPolyDegree+1,ierr)
+      CALL makeGrid(dxel,dyel,elemCenterX,elemCenterY,dxPlot,dyPlot,quadNodes,xPlot,yPlot)
 
       ! =====================================================================================================
       ! Initialize q, u, and v arrays.
@@ -275,7 +271,9 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
 
       IF(p==1) THEN ! Set up netCDF output file
         cdfOut = TRIM(outdir)//TRIM(cdfOut)//'.nc'
+        write(*,*) '*****'
         write(*,*) 'Outputting to: ',cdfOut
+        write(*,*) '*****'
         CALL output2d(q,xPlot,yPlot,tfinal,calculatedMu,cdfOut,nout,-1)
       ENDIF
       CALL output2d(q,xPlot,yPlot,tfinal,calculatedMu,cdfOut,p,0)
@@ -290,10 +288,11 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
 
       oddstep = .TRUE.
       write(*,*) 'Beginning time step...'
+
       DO n=1,nstep
         ! Call update
         CALL strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
-                               legendreVal,legendreDeriv,avgXferOp,avgXferOpLU,IPIV,&
+                               basisPolyVal,basisPolyDeriv,avgXferOp,avgXferOpLU,IPIV,&
                                dt,dxel,dyel,reactiveCoeffs,oddstep)
 
         time = time + dt
@@ -312,24 +311,26 @@ SUBROUTINE DRIVER(nex0,ney0,nscale,nruns,noutput,maxCFL)
 
       CALL cpu_time(tf(p))
       tf(p) = tf(p) - t0(p)
-      CALL computeErrors(q,q0,e1,e2,ei,cons,tmpqMax,tmpqMin,tf,nRuns,nex0,ney0,nscale,p)
+      CALL computeErrors(q,q0,quadWeights,e1,e2,ei,cons,tmpqMax,tmpqMin,tf,nRuns,nscale,p)
 
       IF(p == nRuns) THEN
         ! Close output files
         CALL output2d(q,xPlot,yPlot,tfinal,calculatedMu,cdfOut,nout,1)
-        CALL computeErrors(q,q0,e1,e2,ei,cons,tmpqMax,tmpqMin,tf,nRuns,nex0,ney0,nscale,-1)
+        CALL computeErrors(q,q0,quadWeights,e1,e2,ei,cons,tmpqMax,tmpqMin,tf,nRuns,nscale,-1)
       ENDIF
 
       DEALLOCATE(elemCenterX,elemCenterY,xPlot,yPlot,DGx,DGy,avgXferOp,avgXferOpLU,IPIV,FOO,&
                 q,q0,reactiveCoeffs,u0,v0,uEdge0,vEdge0,STAT=ierr)
     ENDDO !p
 
-    DEALLOCATE(quadNodes,quadWeights,legendreVal,legendreDeriv,STAT=ierr)
+
+
+    DEALLOCATE(quadNodes,quadWeights,baryWeights,basisPolyVal,basisPolyDeriv,STAT=ierr)
 
     ENDDO !nmethod
 
 CONTAINS
-  SUBROUTINE makeGrid(dxel,dyel,xCenter,yCenter,dxPlot,dyPlot,xPlot,yPlot)
+  SUBROUTINE makeGrid(dxel,dyel,xCenter,yCenter,dxPlot,dyPlot,quadNodes,xPlot,yPlot)
     ! =============================================================================
     ! Computes cell width and initializes cell centers and quadrature grid
     ! INPUTS:   nex,ney - number of elements
@@ -338,9 +339,10 @@ CONTAINS
     ! OUTPUTS:  dxel,dyel - width of elements
     !           xCenter(j),yCenter(j) - location of jth element center
     ! =============================================================================
-    USE commonTestParameters, ONLY: xDomain,yDomain,nxOut,nyOut
+    USE commonTestParameters, ONLY: xDomain,yDomain,nxOut,nyOut,nQuad
     IMPLICIT NONE
     ! Inputs
+    DOUBLE PRECISION, DIMENSION(0:nQuad), INTENT(IN) :: quadNodes
     ! Outputs
     DOUBLE PRECISION, INTENT(OUT) :: dxel,dyel,dxPlot,dyPlot
     DOUBLE PRECISION, DIMENSION(1:nex), INTENT(OUT) :: xCenter
@@ -365,19 +367,26 @@ CONTAINS
       xCenter(j) = xCenter(j-1)+dxel
     ENDDO!j
 
-    xPlot(1) = xDomain(1)+0.5D0*dxPlot
-    DO j=2,nxOut
-      xPlot(j) = xPlot(j-1)+dxPlot
-    ENDDO!j
+!    xPlot(1) = xDomain(1)+0.5D0*dxPlot
+!    DO j=2,nxOut
+!      xPlot(j) = xPlot(j-1)+dxPlot
+!    ENDDO!j
+    DO j=1,nex
+      xPlot(1+(j-1)*(nQuad+1):j*(nQuad+1)) = xCenter(j)+0.5D0*dxel*quadNodes(:)
+    ENDDO !j
 
     yCenter(1) = yDomain(1)+0.5D0*dyel
     DO j=2,ney
       yCenter(j) = yCenter(j-1)+dyel
     ENDDO!j
 
-    yPlot(1) = xDomain(1)+0.5D0*dyPlot
-    DO j=2,nyOut
-      yPlot(j) = yPlot(j-1)+dyPlot
-    ENDDO!j
+    DO j=1,ney
+      yPlot(1+(j-1)*(nQuad+1):j*(nQuad+1)) = yCenter(j)+0.5D0*dyel*quadNodes(:)
+    ENDDO !j
+
+!    yPlot(1) = xDomain(1)+0.5D0*dyPlot
+!    DO j=2,nyOut
+!      yPlot(j) = yPlot(j-1)+dyPlot
+!    ENDDO!j
   END SUBROUTINE makeGrid
 END SUBROUTINE DRIVER

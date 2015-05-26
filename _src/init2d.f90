@@ -90,8 +90,8 @@ SUBROUTINE init2d(q,u,v,uEdge,vEdge,xPlot,yPlot,quadNodes,dxel,dyel,&
     CASE(99) ! no flow
       psiu = 0D0
       psiv = 0D0
-      psiuEdge=0d0
-      psivEdge=0d0
+      psiuEdge = 0d0
+      psivEdge = 0d0
     CASE(2,5:7) ! LeVeque deformation flow
       ! Evaluate stream function for horizontal velocities (1/pi)*sin(pi*xf(i))**2 * sin(pi*yf(j))**2
       DO j=1,nyOut
@@ -121,5 +121,5 @@ SUBROUTINE init2d(q,u,v,uEdge,vEdge,xPlot,yPlot,quadNodes,dxel,dyel,&
     v(i,:) = -1D0*(psiv(i,:,1)-psiv(i,:,0))/dxPlot
     vEdge(i,:) = -1D0*(psivEdge(i,:,1)-psivEdge(i,:,0))/dxPlot
   ENDDO!i
-  
+
 END SUBROUTINE init2d

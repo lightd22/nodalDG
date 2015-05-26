@@ -31,8 +31,8 @@ SUBROUTINE numFlux(coeffs,uEdge,nelem,fluxes)
 
   DO m=1,meqn
     DO j=1,nelem
-      qvals(1,j,m) = SUM(coeffs(:,j,m))
-      qvals(0,j,m) = SUM(coeffs(:,j,m)*(/ ((-1D0)**i,i=0,maxPolyDegree) /))
+      qvals(1,j,m) = coeffs(maxPolyDegree,j,m)
+      qvals(0,j,m) = coeffs(0,j,m)
 
       uTmp(1,j) = uEdge(j)
       uTmp(0,j) = uEdge(j-1)

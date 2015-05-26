@@ -1,8 +1,9 @@
-SUBROUTINE computeErrors(qOut,q0,e1,e2,ei,cons,qMax,qMin,tf,nRuns,nex0,ney0,nscale,stat)
+SUBROUTINE computeErrors(qOut,q0,quadWeights,e1,e2,ei,cons,qMax,qMin,tf,nRuns,nscale,stat)
   ! =============================================================================
   ! Prints error estimates and other useful information to screen
   ! INPUTS: qOut - current estimate solution
   !         q0   - initial conditions
+  !         quadWeights - quadrature weights (used in conservation estimation)
   !         tf(p) - cput time for pth run
   !         stat - status integer
   !         ovrshoot(p,m) - maximum overshoot in appx soln at plotting times
@@ -15,14 +16,16 @@ SUBROUTINE computeErrors(qOut,q0,e1,e2,ei,cons,qMax,qMin,tf,nRuns,nex0,ney0,nsca
   USE commonTestParameters
   IMPLICIT NONE
   ! Inputs
-  INTEGER, INTENT(IN) :: nRuns,stat,nscale,nex0,ney0
+  INTEGER, INTENT(IN) :: nRuns,stat,nscale
   DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut,1:meqn), INTENT(IN) :: q0,qOut
   DOUBLE PRECISION, DIMENSION(1:nRuns,1:meqn), INTENT(IN) :: qMax,qMin
+  DOUBLE PRECISION, DIMENSION(0:nQuad), INTENT(IN) :: quadWeights
   REAL(KIND=4), DIMENSION(1:nRuns),INTENT(IN) :: tf
   ! Outputs
   DOUBLE PRECISION, DIMENSION(1:nRuns,1:meqn),INTENT(INOUT) :: e1,e2,ei,cons
   ! Local variables
-  INTEGER :: p,m
+  INTEGER :: p,m,startHoriz,startVert,endHoriz,endVert,i,j,l
+  DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,0:maxPolyDegree) :: coeffs,tmp
   CHARACTER(len=2) :: qname
   DOUBLE PRECISION :: cnvg1,cnvg2,cnvgi
 
@@ -47,7 +50,7 @@ SUBROUTINE computeErrors(qOut,q0,e1,e2,ei,cons,qMax,qMin,tf,nRuns,nex0,ney0,nsca
           cnvgi = -log(ei(p,m)/ei(p-1,m))/log(dble(nscale))
         ENDIF
 
-        WRITE(*,990) nex0*nscale**(p-1), ney0*nscale**(p-1), e1(p,m), e2(p,m), ei(p,m), &
+        WRITE(*,990) nex, ney, e1(p,m), e2(p,m), ei(p,m), &
               cnvg1, cnvg2, cnvgi, &
               qMax(p,m), &
               qMin(p,m), &
@@ -58,10 +61,36 @@ SUBROUTINE computeErrors(qOut,q0,e1,e2,ei,cons,qMax,qMin,tf,nRuns,nex0,ney0,nsca
   ELSE
     ! Compute error estimates for this run
     DO m=1,meqn
-      e1(stat,m) = SUM(ABS(qOut(:,:,m)-q0(:,:,m)))/DBLE(nxOut*nyOut)
-      e2(stat,m) = SQRT(SUM((qOut(:,:,m)-q0(:,:,m))**2)/DBLE(nxOut*nyOut))
+      ! Conservation estimate
+      cons(stat,m) = 0D0
+      DO i=1,nex
+        DO j=1,ney
+          startHoriz = 1+(maxPolyDegree+1)*(i-1)
+          startVert = 1+(maxPolyDegree+1)*(j-1)
+          endHoriz = startHoriz + maxPolyDegree
+          endVert = startVert + maxPolyDegree
+
+          coeffs(:,:) = qOut(startHoriz:endHoriz,startVert:endVert,m)-q0(startHoriz:endHoriz,startVert:endVert,m)
+          DO l=0,maxPolyDegree
+            tmp(:,l) = 0.25D0*coeffs(:,l)*quadWeights(:)*quadWeights(l)
+          ENDDO !l
+          cons(stat,m) = cons(stat,m) + SUM(tmp)
+
+          DO l=0,maxPolyDegree
+            tmp(:,l) = 0.25D0*abs(coeffs(:,l))*quadWeights(:)*quadWeights(l)
+          ENDDO !l
+          e1(stat,m) = e1(stat,m) + SUM(tmp)
+
+          DO l=0,maxPolyDegree
+            tmp(:,l) = 0.25D0*quadWeights(:)*quadWeights(l)*coeffs(:,l)**2
+          ENDDO !l
+          e2(stat,m) = e2(stat,m) + SUM(tmp)
+        ENDDO !j
+      ENDDO!i
+      cons(stat,m) = cons(stat,m)/DBLE(nex*ney)
+      e1(stat,m) = e1(stat,m)/DBLE(nex*ney)
+      e2(stat,m) = SQRT(e2(stat,m)/DBLE(nex*ney))
       ei(stat,m) = MAXVAL(ABS( qOut(:,:,m)-q0(:,:,m) ))
-      cons(stat,m) = SUM(qOut(:,:,m)-q0(:,:,m))/DBLE(nxOut*nyOut)
     ENDDO !m
 
   ENDIF

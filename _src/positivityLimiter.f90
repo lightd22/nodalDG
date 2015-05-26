@@ -1,9 +1,10 @@
-SUBROUTINE positivityLimiter(qBar,nelem,avgVals)
+SUBROUTINE positivityLimiter(qBar,nelem,avgVals,quadWeights)
 	! Subroutine for mass filling within an element to remove negative cell averaged values
   USE commonTestParameters
 	IMPLICIT NONE
 	! Inputs
 	INTEGER, INTENT(IN) :: nelem
+  DOUBLE PRECISION, DIMENSION(0:nQuad), INTENT(IN) :: quadWeights
 	DOUBLE PRECISION, DIMENSION(1:nelem,1:meqn), INTENT(IN) :: avgVals
   ! Outputs
   DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,1:nelem,1:meqn), INTENT(INOUT) :: qBar
@@ -22,9 +23,9 @@ SUBROUTINE positivityLimiter(qBar,nelem,avgVals)
         Mt = 0D0
 
         DO k=0,maxPolyDegree
-          Mt = Mt + qBar(k,j,m)
+          Mt = Mt + quadWeights(k)*qBar(k,j,m)
           qBar(k,j,m) = MAX(0D0,qBar(k,j,m)) ! Zero out negative masses
-          Mp = Mp + qBar(k,j,m)
+          Mp = Mp + quadWeights(k)*qBar(k,j,m)
         ENDDO !k
         r = MAX(Mt,0D0)/MAX(Mp,TINY(1D0))
         qBar(:,j,m) = r*qBar(:,j,m) ! Reduce remaining positive masses by reduction factor
@@ -32,7 +33,7 @@ SUBROUTINE positivityLimiter(qBar,nelem,avgVals)
     ENDDO !m
 	ELSEIF(limitingType .eq. 2) THEN
 		! ===============================================================================================
-		! TYPE 2: Replace truncation mass redistribution with rescaling similar to Zhang and Shu (2010)
+		! TYPE 2: Linear rescaling similar to Zhang and Shu (2010)
 		! ===============================================================================================
     DO m=1,meqn
       DO j=1,nelem

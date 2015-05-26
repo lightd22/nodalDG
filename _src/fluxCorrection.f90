@@ -1,4 +1,4 @@
-SUBROUTINE fluxCorrection(coeffs,flx,dxel,dt,nelem)
+SUBROUTINE fluxCorrection(coeffs,flx,quadWeights,dxel,dt,nelem)
 	! Computes flux reductions factors to prevent total mass within each element from going negative
 	! Outputs fluxcf. fluxcf(j) is the reduction factor for the right face of element j,
 	!  with fluxcf(0) being the factor for the left domain interface
@@ -7,11 +7,12 @@ SUBROUTINE fluxCorrection(coeffs,flx,dxel,dt,nelem)
 	! -- Inputs
 	INTEGER, INTENT(IN) :: nelem
 	DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,1:nelem,1:meqn), INTENT(IN) :: coeffs
+  DOUBLE PRECISION, DIMENSION(0:nQuad), INTENT(IN) :: quadWeights
 	DOUBLE PRECISION, INTENT(IN) :: dxel,dt
 	! -- Outputs
 	DOUBLE PRECISION, DIMENSION(0:nelem,1:meqn), INTENT(INOUT) :: flx
 	! -- Local variables
-	DOUBLE PRECISION :: Pj,Qj,eps
+	DOUBLE PRECISION :: Pj,Qj,eps,avgj
 	DOUBLE PRECISION :: fluxcf
 	DOUBLE PRECISION, DIMENSION(0:nelem+1) :: R ! Reduction ratio for outward fluxes so that element j has non-negative values (1D0 indicates no limiting needed)
 	INTEGER :: j,m
@@ -21,7 +22,8 @@ SUBROUTINE fluxCorrection(coeffs,flx,dxel,dt,nelem)
   DO m=1,meqn
     DO j=1,nelem
       ! Compute maximum allowable flux out of element j
-      Qj = (dxel/dt)*coeffs(0,j,m)
+      avgj = 0.5D0*SUM(quadWeights(:)*coeffs(:,j,m))
+      Qj = (dxel/dt)*avgj
 
       Qj = MAX(Qj-epsilon(1D0),0D0)
 

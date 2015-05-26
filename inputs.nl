@@ -24,7 +24,7 @@
     tfinal = 5D0        ! Final time of integration
 
     TRANSIENT = .TRUE.  ! Time-dependent flow
-    DOREACTIVE = .TRUE. ! Reactive flow
+    DOREACTIVE = .FALSE. ! Reactive flow
 
     ! Misc parameters
     DEBUG = .FALSE.

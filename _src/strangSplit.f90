@@ -1,5 +1,5 @@
 SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
-                       legendreVal,legendreDeriv,avgOP,avgOP_LU,IPIV,&
+                       basisPolyVal,basisPolyDeriv,avgOP,avgOP_LU,IPIV,&
                        dt,dxel,dyel,reactiveCoeffs,oddstep)
 ! =====================================================================================================
 ! strangSplitUpdate is responsible for selecting which slice of subcell volumes is sent to mDGsweep for update to time
@@ -17,7 +17,7 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
     DOUBLE PRECISION, DIMENSION(1:nex,1:nyOut), INTENT(IN) :: uEdge0
     DOUBLE PRECISION, DIMENSION(1:nxOut,1:ney), INTENT(IN) :: vEdge0
     DOUBLE PRECISION, DIMENSION(0:nQuad), INTENT(IN) :: quadNodes,quadWeights
-    DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,0:nQuad), INTENT(IN) :: legendreVal,legendreDeriv
+    DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,0:nQuad), INTENT(IN) :: basisPolyVal,basisPolyDeriv
     DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,0:maxPolyDegree),INTENT(IN) :: avgOP,avgOp_LU
     DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut,1:meqn), INTENT(IN) :: reactiveCoeffs
     INTEGER, DIMENSION(0:maxPolyDegree), INTENT(IN) :: IPIV
@@ -55,8 +55,8 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
         DOUBLE PRECISION, DIMENSION(1:nxOut,1:ney), INTENT(INOUT) :: vEdge
       END SUBROUTINE updateVelocities
 
-      SUBROUTINE updateSoln1d(q,u,uEdge,dt,dxel,nelem,nx,quadWeights,avgOP,avgOP_LU,&
-                              legVals,dlegVals,IPIV)
+      SUBROUTINE updateSoln1d(q,u,uEdge,dt,dxel,nelem,nx,quadWeights,&
+                              basisVals,basisDeriv)
         ! ===========================================================================
         ! Takes full dt time step for one dimensional slice of subcell averages using SSPRK3
         ! integrator
@@ -67,10 +67,8 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
         INTEGER, INTENT(IN) :: nelem,nx
         DOUBLE PRECISION, INTENT(IN) :: dxel,dt
         DOUBLE PRECISION, DIMENSION(0:nQuad), INTENT(IN) :: quadWeights
-        DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,0:nQuad), INTENT(IN) :: legVals,&
-          dlegVals
-        DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,0:maxPolyDegree), INTENT(IN) :: avgOp,avgOp_LU
-        INTEGER, DIMENSION(0:maxPolyDegree), INTENT(IN) :: IPIV
+        DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,0:nQuad), INTENT(IN) :: basisVals,&
+          basisDeriv
         DOUBLE PRECISION, DIMENSION(1:3,1:nx), INTENT(IN) :: u
         DOUBLE PRECISION, DIMENSION(1:3,1:nelem), INTENT(IN) :: uEdge
         ! Outputs
@@ -140,7 +138,7 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
           u1dx(1:3,:) = u(1:3,:,j)
           uEdge1dx(1:3,:) = uEdge(1:3,:,j)
           CALL updateSoln1d(q1dx,u1dx,uEdge1dx,dt,dxel,nex,nxOut,quadWeights,&
-                            avgOP,avgOP_LU,legendreVal,legendreDeriv,IPIV)
+                            basisPolyVal,basisPolyDeriv)
           ! Update solution
           q(:,j,:) = q1dx
         ENDDO!j
@@ -150,7 +148,7 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
           v1dy(1:3,:) = v(1:3,i,:)
           vEdge1dy(1:3,:) = vEdge(1:3,i,:)
           CALL updateSoln1d(q1dy,v1dy,vEdge1dy,dt,dyel,ney,nyOut,quadWeights,&
-                            avgOP,avgOP_LU,legendreVal,legendreDeriv,IPIV)
+                            basisPolyVal,basisPolyDeriv)
           ! Update solution
           q(i,:,:) = q1dy
         ENDDO !i
@@ -168,7 +166,7 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
           v1dy(1:3,:) = v(1:3,i,:)
           vEdge1dy(1:3,:) = vEdge(1:3,i,:)
           CALL updateSoln1d(q1dy,v1dy,vEdge1dy,dt,dyel,ney,nyOut,quadWeights,&
-                            avgOP,avgOP_LU,legendreVal,legendreDeriv,IPIV)
+                            basisPolyVal,basisPolyDeriv)
           ! Update solution
           q(i,:,:) = q1dy
         ENDDO !i
@@ -178,7 +176,7 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
           u1dx(1:3,:) = u(1:3,:,j)
           uEdge1dx(1:3,:) = uEdge(1:3,:,j)
           CALL updateSoln1d(q1dx,u1dx,uEdge1dx,dt,dxel,nex,nxOut,quadWeights,&
-                            avgOP,avgOP_LU,legendreVal,legendreDeriv,IPIV)
+                            basisPolyVal,basisPolyDeriv)
           ! Update solution
           q(:,j,:) = q1dx
         ENDDO!j
