@@ -28,7 +28,7 @@ SOURCES = $(SRCDIR)/tfcn.f90 \
 					$(SRCDIR)/reactiveJacobian.f90\
 					$(SRCDIR)/reactiveStep.f90\
 
-MODULES = $(SRCDIR)/mDGmod.f90 \
+MODULES = $(SRCDIR)/nDGmod.f90 \
 					$(SRCDIR)/commonTestParameters.f90 \
 
 INPUTS  = inputs.nl
@@ -41,16 +41,16 @@ MODOBJ  :=$(notdir $(MODULES:.f90=.o))
 # Set the order in which directories are searched when looking for targets
 VPATH = $(SRCDIR)
 
-all: $(SOURCES) $(INPUTS) test_2d_modal
+all: $(SOURCES) $(INPUTS) test_2d
 
-2d_test: test_2d_modal
-	./test_2d_modal
+2d_test: test_2d
+	./test_2d
 
-test_2d_modal: $(MODOBJ) $(OBJECTS) $(INPUTS) split_2d_modal.f90
+test_2d: $(MODOBJ) $(OBJECTS) $(INPUTS) split_2d_nodal.f90
 	$(F90) $(FFLAGS) $^ -o $@ $(LDFLAGS)
 
 clean:
-	rm -f $(OBJECTS) $(MODOBJ) *.mod test_2d_modal
+	rm -f $(OBJECTS) $(MODOBJ) *.mod test_2d
 
 %.o: %.f90
 		$(F90) $(OBJFLAGS) -c -o $@ $^
