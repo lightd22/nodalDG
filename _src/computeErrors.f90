@@ -1,4 +1,4 @@
-SUBROUTINE computeErrors(qOut,q0,quadWeights,e1,e2,ei,cons,qMax,qMin,tf,nRuns,nscale,stat)
+SUBROUTINE computeErrors(qOut,q0,quadWeights,e1,e2,ei,cons,qMax,qMin,tf,nRuns,nex0,ney0,nscale,stat)
   ! =============================================================================
   ! Prints error estimates and other useful information to screen
   ! INPUTS: qOut - current estimate solution
@@ -16,7 +16,7 @@ SUBROUTINE computeErrors(qOut,q0,quadWeights,e1,e2,ei,cons,qMax,qMin,tf,nRuns,ns
   USE commonTestParameters
   IMPLICIT NONE
   ! Inputs
-  INTEGER, INTENT(IN) :: nRuns,stat,nscale
+  INTEGER, INTENT(IN) :: nRuns,stat,nscale,nex0,ney0
   DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut,1:meqn), INTENT(IN) :: q0,qOut
   DOUBLE PRECISION, DIMENSION(1:nRuns,1:meqn), INTENT(IN) :: qMax,qMin
   DOUBLE PRECISION, DIMENSION(0:nQuad), INTENT(IN) :: quadWeights
@@ -24,7 +24,7 @@ SUBROUTINE computeErrors(qOut,q0,quadWeights,e1,e2,ei,cons,qMax,qMin,tf,nRuns,ns
   ! Outputs
   DOUBLE PRECISION, DIMENSION(1:nRuns,1:meqn),INTENT(INOUT) :: e1,e2,ei,cons
   ! Local variables
-  INTEGER :: p,m,startHoriz,startVert,endHoriz,endVert,i,j,l
+  INTEGER :: p,m,startHoriz,startVert,endHoriz,endVert,i,j,l,currnex,currney
   DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,0:maxPolyDegree) :: coeffs,tmp
   CHARACTER(len=2) :: qname
   DOUBLE PRECISION :: cnvg1,cnvg2,cnvgi
@@ -50,7 +50,10 @@ SUBROUTINE computeErrors(qOut,q0,quadWeights,e1,e2,ei,cons,qMax,qMin,tf,nRuns,ns
           cnvgi = -log(ei(p,m)/ei(p-1,m))/log(dble(nscale))
         ENDIF
 
-        WRITE(*,990) nex, ney, e1(p,m), e2(p,m), ei(p,m), &
+        currnex = nex0*nscale**(p-1)
+        currney = ney0*nscale**(p-1)
+
+        WRITE(*,990) currnex, currney, e1(p,m), e2(p,m), ei(p,m), &
               cnvg1, cnvg2, cnvgi, &
               qMax(p,m), &
               qMin(p,m), &
@@ -63,6 +66,8 @@ SUBROUTINE computeErrors(qOut,q0,quadWeights,e1,e2,ei,cons,qMax,qMin,tf,nRuns,ns
     DO m=1,meqn
       ! Conservation estimate
       cons(stat,m) = 0D0
+      e1(stat,m) = 0D0
+      e2(stat,m) = 0D0
       DO i=1,nex
         DO j=1,ney
           startHoriz = 1+(maxPolyDegree+1)*(i-1)

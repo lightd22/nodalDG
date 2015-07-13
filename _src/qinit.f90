@@ -24,13 +24,14 @@ SUBROUTINE qinit(xVals,yVals,nx,ny,q,reactiveCoeffs)
   IF(doreactive) THEN
     qT = 4D-6
     x0 = 0.25D0
-    IF(meqn .ne. 2) then
-      write(*,*) 'ERROR! In qinit().. reactive test only supports meqn = 2'
+    IF(meqn > 3) then
+      write(*,*) 'ERROR! In qinit().. reactive test only supports meqn <= 3'
       STOP
     ENDIF
 
     reactiveCoeffs(:,:,1) = 1D0
     reactiveCoeffs(:,:,2) = 0D0
+    reactiveCoeffs(:,:,3) = 0D0
 !    DO i=1,nx
 !      IF(abs(xVals(i)-x0) .le. 0.25D0) THEN
 !        reactiveCoeffs(i,:,1) = COS(2D0*PI*(xVals(i)-x0))
@@ -59,17 +60,26 @@ SUBROUTINE qinit(xVals,yVals,nx,ny,q,reactiveCoeffs)
 !      END WHERE
 !      q(:,:,2) = 1D0-q(:,:,1)
 !      q(:,:,2) = 2D0*q(:,:,2)
-
     CASE(5) ! Cosbell deformation from LeVeque
       DO j=1,ny
           r(:,j) = 4D0*SQRT( (xVals-0.25D0)**2 + (yVals(j)-0.25D0)**2 )
       ENDDO !j
       q = 0D0
       WHERE(r .lt. 1D0)
-          q(:,:,2) = 0.25D0*(1D0+DCOS(PI*r))**2
+          q(:,:,1) = 0.25D0*(1D0+DCOS(PI*r))**2
       END WHERE
-      !q(:,:,2) = q(:,:,1)
-      q(:,:,1) = 1D0-q(:,:,2)
+      !q(:,:,2) = 1D0
+
+!      q(:,:,3) = 0D0
+
+    CASE(6) ! Smoother cosbell
+      DO j=1,ny
+          r(:,j) = 4D0*SQRT( (xVals-0.25D0)**2 + (yVals(j)-0.25D0)**2 )
+      ENDDO !j
+      q = 0D0
+      WHERE(r .lt. 1D0)
+          q(:,:,1) = (0.5D0*(1D0+DCOS(PI*r)))**3
+      END WHERE
 
     CASE(7) ! Slotted cylinder in deformation flow
         x0 = 0.25D0

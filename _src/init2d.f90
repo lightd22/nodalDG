@@ -1,4 +1,4 @@
-SUBROUTINE init2d(q,u,v,uEdge,vEdge,xPlot,yPlot,quadNodes,dxel,dyel,&
+SUBROUTINE init2d(q,u,v,uEdge,vEdge,xPlot,yPlot,DGx,DGy,quadNodes,dxel,dyel,&
                   dxPlot,dyPlot,elemCenterX,elemCenterY,reactiveCoeffs)
   ! ==============================================================================
   ! Computes initial conditions for q,u,v fields
@@ -26,11 +26,11 @@ SUBROUTINE init2d(q,u,v,uEdge,vEdge,xPlot,yPlot,quadNodes,dxel,dyel,&
   DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut) :: u,v
   DOUBLE PRECISION, DIMENSION(1:nex,1:nyOut), INTENT(OUT) :: uEdge
   DOUBLE PRECISION, DIMENSION(1:nxOut,1:ney), INTENT(OUT) :: vEdge
+  DOUBLE PRECISION, DIMENSION(1:nxOut), INTENT(OUT) :: DGx
+  DOUBLE PRECISION, DIMENSION(1:nyOut), INTENT(OUT) :: DGy
 
   ! Local Variables
   INTEGER :: i,j,l
-  DOUBLE PRECISION, DIMENSION(1:nxOut) :: DGx
-  DOUBLE PRECISION, DIMENSION(1:nyOut) :: DGy
   DOUBLE PRECISION, DIMENSION(1:nxOut,0:1) :: xtilde
   DOUBLE PRECISION, DIMENSION(1:nyOut,0:1) :: ytilde
   DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut,0:1) :: psiu,psiv
@@ -112,14 +112,14 @@ SUBROUTINE init2d(q,u,v,uEdge,vEdge,xPlot,yPlot,quadNodes,dxel,dyel,&
 
   ! Compute u velocities from stream function
   DO j=1,nyOut
-    u(:,j) = (psiu(:,j,1)-psiu(:,j,0))/dyPlot
-    uEdge(:,j) = (psiuEdge(:,j,1)-psiuEdge(:,j,0))/dyPlot
+    u(:,j) = uMean+(psiu(:,j,1)-psiu(:,j,0))/dyPlot
+    uEdge(:,j) = uMean+(psiuEdge(:,j,1)-psiuEdge(:,j,0))/dyPlot
   ENDDO!j
 
   ! Compute v velocities from stream function
   DO i=1,nxOut
-    v(i,:) = -1D0*(psiv(i,:,1)-psiv(i,:,0))/dxPlot
-    vEdge(i,:) = -1D0*(psivEdge(i,:,1)-psivEdge(i,:,0))/dxPlot
+    v(i,:) = vMean-1D0*(psiv(i,:,1)-psiv(i,:,0))/dxPlot
+    vEdge(i,:) = vMean-1D0*(psivEdge(i,:,1)-psivEdge(i,:,0))/dxPlot
   ENDDO!i
 
 END SUBROUTINE init2d

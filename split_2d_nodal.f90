@@ -15,7 +15,6 @@ PROGRAM EXECUTE
 
     IMPLICIT NONE
     INTEGER :: startRes,noutput,nRuns,nScale
-    LOGICAL :: debug
     REAL(KIND=8) :: muMAX,cflCoeff
 
     INTERFACE
@@ -26,7 +25,7 @@ PROGRAM EXECUTE
     END INTERFACE
 
     NAMELIST /inputs/ startRes,nRuns,nScale,maxPolyDegree,cflCoeff,noutput,meqn, &
-                      testID,tfinal,TRANSIENT,DOREACTIVE,DEBUG
+                      testID,tfinal,TRANSIENT,DOREACTIVE,DEBUG,uMean,vMean
     inUnit=20
     OPEN(unit=inUnit,file="inputs.nl",action="read")
     READ(inUnit,NML=inputs)
@@ -40,7 +39,9 @@ PROGRAM EXECUTE
     write(*,*) '             BEGINNING RUN OF NODAL TESTS             '
     write(*,'(A27,F7.4)') 'muMAX=',muMAX
     write(*,'(A13,L5)') 'TRANSIENT =',transient
-    write(*,'(A10,I5)') 'meqn = ',meqn
+    write(*,'(A13,L5)') 'REACTIVE  =',doreactive
+    write(*,'(A9,I5)') 'meqn = ',meqn
+    write(*,'(A20,2F7.4)') 'mean flow (U,V) = ',uMean,vMean
     write(*,*) '======================================================'
 
     write(*,*) '======'
@@ -59,6 +60,9 @@ PROGRAM EXECUTE
         	write(*,*) 'TEST 7: Slotted Cylinder Deformation Test'
         CASE(99)
           write(*,*) 'TEST 99: Non-advective Flow'
+        CASE DEFAULT
+          write(*,*) ' ******** WARNING:: TEST NOT AVAILABLE *******'
+          STOP
     END SELECT
   write(*,*) 'WARNING: Only periodic BCs are implemented'
 	write(*,*) '======'

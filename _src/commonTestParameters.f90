@@ -8,9 +8,9 @@ MODULE commonTestParameters
   INTEGER :: cdfID
   INTEGER :: inUnit
   DOUBLE PRECISION, DIMENSION(1:2) :: xDomain,yDomain
-  DOUBLE PRECISION :: PI,tfinal
-  LOGICAL :: transient,doposlimit,doreactive
-  CHARACTER(len=24) :: outdir
+  DOUBLE PRECISION :: PI,tfinal,uMean,vMean
+  LOGICAL :: transient,doposlimit,doreactive,debug
+  CHARACTER(len=30) :: outdir
   SAVE
 
 END MODULE commonTestParameters

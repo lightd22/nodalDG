@@ -26,10 +26,31 @@ SUBROUTINE reactiveJacobian(jacobian,qVals,forcingCoeffs,nx,ny)
 !      jacobian(i,j,1,2) = 2D0*forcingCoeffs(i,j,2)*qVals(i,j,2)
 !      jacobian(i,j,2,1) = -2D0*jacobian(i,j,1,1)
 !      jacobian(i,j,1,2) = -2D0*jacobian(i,j,1,2)
-      jacobian(i,j,1,1) = -forcingCoeffs(i,j,1)*qVals(i,j,2)
-      jacobian(i,j,1,2) = -forcingCoeffs(i,j,1)*qVals(i,j,1)
-      jacobian(i,j,2,1) = forcingCoeffs(i,j,1)*qVals(i,j,2)
-      jacobian(i,j,2,2) = forcingCoeffs(i,j,1)*qVals(i,j,1)
+
+      ! ====
+      ! dq1/dt = -r*q1*q2
+      ! dq2/dt = -dq1/dt
+      ! ====
+!      jacobian(i,j,1,1) = -forcingCoeffs(i,j,1)*qVals(i,j,2)
+!      jacobian(i,j,1,2) = -forcingCoeffs(i,j,1)*qVals(i,j,1)
+!      jacobian(i,j,2,1) = forcingCoeffs(i,j,1)*qVals(i,j,2)
+!      jacobian(i,j,2,2) = forcingCoeffs(i,j,1)*qVals(i,j,1)
+
+      ! ====
+      ! dq1/dt = r*q2^2
+      ! dq2/dt = -dq1/dt
+      ! ====
+      jacobian(i,j,1,1) = 0D0
+      jacobian(i,j,1,2) = 2D0*forcingCoeffs(i,j,1)*qVals(i,j,2)
+      jacobian(i,j,2,1) = 0D0
+      jacobian(i,j,2,2) = -2D0*forcingCoeffs(i,j,1)*qVals(i,j,2)
+
+!      jacobian(i,j,:,:) = 0D0
+!      jacobian(i,j,1,1) = -qVals(i,j,2)
+!      jacobian(i,j,1,2) = -qVals(i,j,1)
+!      jacobian(i,j,2,:) = jacobian(i,j,1,:)
+!      jacobian(i,j,3,:) = -2D0*jacobian(i,j,1,:)
+!      jacobian(i,j,:,:) = forcingCoeffs(i,j,1)*jacobian(i,j,:,:)
     ENDDO !j
   ENDDO !i
 

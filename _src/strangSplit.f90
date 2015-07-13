@@ -1,4 +1,4 @@
-SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
+SUBROUTINE strangSplit(q,u,v,uEdge,vEdge,quadNodes,quadWeights,time,&
                        basisPolyVal,basisPolyDeriv,avgOP,avgOP_LU,IPIV,&
                        dt,dxel,dyel,reactiveCoeffs,oddstep)
 ! =====================================================================================================
@@ -13,9 +13,9 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
     IMPLICIT NONE
     ! Inputs
     DOUBLE PRECISION, INTENT(IN) :: dt,dxel,dyel,time
-    DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut), INTENT(IN) :: u0,v0
-    DOUBLE PRECISION, DIMENSION(1:nex,1:nyOut), INTENT(IN) :: uEdge0
-    DOUBLE PRECISION, DIMENSION(1:nxOut,1:ney), INTENT(IN) :: vEdge0
+    DOUBLE PRECISION, DIMENSION(1:3,1:nxOut,1:nyOut), INTENT(IN) :: u,v
+    DOUBLE PRECISION, DIMENSION(1:3,1:nex,1:nyOut), INTENT(IN) :: uEdge
+    DOUBLE PRECISION, DIMENSION(1:3,1:nxOut,1:ney), INTENT(IN) :: vEdge
     DOUBLE PRECISION, DIMENSION(0:nQuad), INTENT(IN) :: quadNodes,quadWeights
     DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,0:nQuad), INTENT(IN) :: basisPolyVal,basisPolyDeriv
     DOUBLE PRECISION, DIMENSION(0:maxPolyDegree,0:maxPolyDegree),INTENT(IN) :: avgOP,avgOp_LU
@@ -26,13 +26,6 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
     DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut,1:meqn), INTENT(INOUT) :: q
     ! Local variables
     INTEGER :: i,j,k
-    DOUBLE PRECISION :: t_temp
-    DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut) :: utmp,vtmp
-    DOUBLE PRECISION, DIMENSION(1:nex,1:nyOut) :: uEdgetmp
-    DOUBLE PRECISION, DIMENSION(1:nxOut,1:ney) :: vEdgetmp
-    DOUBLE PRECISION, DIMENSION(1:3,1:nxOut,1:nyOut) :: u,v
-    DOUBLE PRECISION, DIMENSION(1:3,1:nex,1:nyOut) :: uEdge
-    DOUBLE PRECISION, DIMENSION(1:3,1:nxOut,1:ney) :: vEdge
     DOUBLE PRECISION, DIMENSION(1:nxOut,1:meqn) :: q1dx
     DOUBLE PRECISION, DIMENSION(1:nyOut,1:meqn) :: q1dy
     DOUBLE PRECISION, DIMENSION(1:3,1:nxOut) :: u1dx
@@ -41,20 +34,6 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
     DOUBLE PRECISION, DIMENSION(1:3,1:ney) :: vEdge1dy
 
     INTERFACE
-      SUBROUTINE updateVelocities(u,v,uEdge,vEdge,time)
-        ! =========================================================
-        ! Updates the edge and quadrature velocities to given time
-        ! =========================================================
-        USE commonTestParameters
-        IMPLICIT NONE
-        ! Inputs
-        DOUBLE PRECISION, INTENT(IN) :: time
-        ! Outputs
-        DOUBLE PRECISION, DIMENSION(1:nxOut,1:nyOut), INTENT(INOUT) :: u,v
-        DOUBLE PRECISION, DIMENSION(1:nex,1:nyOut), INTENT(INOUT) :: uEdge
-        DOUBLE PRECISION, DIMENSION(1:nxOut,1:ney), INTENT(INOUT) :: vEdge
-      END SUBROUTINE updateVelocities
-
       SUBROUTINE updateSoln1d(q,u,uEdge,dt,dxel,nelem,nx,quadWeights,&
                               basisVals,basisDeriv)
         ! ===========================================================================
@@ -98,37 +77,6 @@ SUBROUTINE strangSplit(q,u0,v0,uEdge0,vEdge0,quadNodes,quadWeights,time,&
       END SUBROUTINE reactiveStep
     END INTERFACE
 
-    ! Update velocities at times required for ssprk3 update
-    IF(transient) THEN
-      DO i=1,3
-        utmp = u0
-        vtmp = v0
-        uEdgetmp = uEdge0
-        vEdgetmp = vEdge0
-        SELECT CASE(i)
-          CASE(1)
-            t_temp = time
-          CASE(2)
-            t_temp = time+dt
-          CASE(3)
-            t_temp = time+0.5D0*dt
-        END SELECT
-
-        CALL updateVelocities(utmp,vtmp,uEdgetmp,vEdgetmp,t_temp)
-
-        u(i,:,:) = utmp
-        v(i,:,:) = vtmp
-        uEdge(i,:,:) = uEdgetmp
-        vEdge(i,:,:) = vEdgetmp
-      ENDDO !i
-    ELSE
-      DO i=1,3
-        u(i,:,:) = u0
-        v(i,:,:) = v0
-        uEdge(i,:,:) = uEdge0
-        vEdge(i,:,:) = vEdge0
-      ENDDO !i
-    ENDIF !transient
     IF(oddstep) THEN
         ! ===================================
         ! Perform sweeps in x-direction first

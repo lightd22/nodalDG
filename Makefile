@@ -27,6 +27,8 @@ SOURCES = $(SRCDIR)/tfcn.f90 \
 					$(SRCDIR)/reactiveForcing.f90\
 					$(SRCDIR)/reactiveJacobian.f90\
 					$(SRCDIR)/reactiveStep.f90\
+					$(SRCDIR)/updateVelocities.f90\
+					$(SRCDIR)/evalVelocities.f90\
 
 MODULES = $(SRCDIR)/nDGmod.f90 \
 					$(SRCDIR)/commonTestParameters.f90 \

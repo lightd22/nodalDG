@@ -75,6 +75,7 @@ SUBROUTINE reactiveStep(q,dt,forcingCoeffs)
   ENDDO !m
 
   ! Fill in jacobian for this time
+  jac = 0D0
   CALL reactiveJacobian(jac,q,forcingCoeffs,nxOut,nyOut)
 
   DO i=1,nxOut
@@ -83,13 +84,16 @@ SUBROUTINE reactiveStep(q,dt,forcingCoeffs)
       A = eye - alpha*dt*jac(i,j,:,:)
       localCoeffs = forcingCoeffs(i,j,:)
       localQ = q(i,j,:)
-
+!      write(*,*) 'calling reactiveForcing 1..'
       CALL reactiveForcing(fRHS,localQ,localCoeffs)
+!      write(*,*) '..after reactiveForcing 1'
       ! Solve for first stage
       CALL DGESV(meqn,1,A,meqn,IPIV,fRHS,meqn,ierr)
       localQ1 = fRHS
 
+!      write(*,*) 'calling reactiveForcing 2..'
       CALL reactiveForcing(fRHS,localQ+dt*localQ1,localCoeffs)
+!      write(*,*) '..after reactiveForcing 2'
       fRHS = fRHS-2D0*localQ1
       ! Solve for second stage
       CALL DGESV(meqn,1,A,meqn,IPIV,fRHS,meqn,ierr)
